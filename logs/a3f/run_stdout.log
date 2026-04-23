@@ -1,0 +1,609 @@
+[Logger] Run ID: 20260421_183457
+[Logger] Results will be saved to: logs/20260421_183457
+[Run Config] method=full seed=1 episodes=50000 max_steps=50 max_cycles=50 n_agents=3 obs_dim=18 action_dim=5 encoder=transformer policy=diffusion actor_lr=0.0001 critic_lr=0.001 horizon=20 diffusion_steps=10 save_checkpoints=True checkpoint_every=100 resume=none start_episode=0
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_0900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_1900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_2900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_3900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_4900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_5900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_6900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_7900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_8900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_9900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_10900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_11900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_12900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_13900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_14900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_15900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_16900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_17900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_18900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_19900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_20900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_21900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_22900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_23900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_24900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_25900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_26900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_27900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_28900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_29900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_30900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_31900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_32900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_33900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_34900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_35900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_36900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_37900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_38900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_39900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_40900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_41900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_42900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_43900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_44900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_45900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_46900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_47900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_48900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49000.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49100.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49200.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49300.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49400.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49500.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49600.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49700.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49800.pt
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_49900.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/ep_50000.pt
+[Log] Saved plot to logs/20260421_183457/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260421_183457
+[Checkpoint] Saved to logs/20260421_183457/checkpoints/final.pt
+[Log] Saved metrics to logs/20260421_183457/metrics.json
+[Training Complete] Results saved to logs/20260421_183457
+[Training Complete] Quick access: logs/latest/

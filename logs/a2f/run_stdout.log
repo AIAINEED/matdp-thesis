@@ -1,0 +1,79 @@
+[Logger] Run ID: 20260420_213722
+[Logger] Results will be saved to: logs/20260420_213722
+[Run Config] method=full seed=1 episodes=5000 max_steps=50 max_cycles=50 n_agents=2 obs_dim=12 action_dim=5 encoder=transformer policy=diffusion actor_lr=0.0001 critic_lr=0.001 horizon=20 diffusion_steps=10 save_checkpoints=True checkpoint_every=100 resume=none start_episode=0
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0100.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0200.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0300.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0400.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0500.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0600.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0700.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0800.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_0900.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1000.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1100.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1200.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1300.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1400.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1500.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1600.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1700.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1800.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_1900.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2000.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2100.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2200.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2300.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2400.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2500.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2600.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2700.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2800.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_2900.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3000.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3100.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3200.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3300.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3400.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3500.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3600.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3700.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3800.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_3900.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4000.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4100.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4200.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4300.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4400.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4500.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4600.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4700.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4800.pt
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_4900.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/ep_5000.pt
+[Log] Saved plot to logs/20260420_213722/training_curves.png
+[Log] Updated latest symlink: logs/latest -> logs/20260420_213722
+[Checkpoint] Saved to logs/20260420_213722/checkpoints/final.pt
+[Log] Saved metrics to logs/20260420_213722/metrics.json
+[Training Complete] Results saved to logs/20260420_213722
+[Training Complete] Quick access: logs/latest/
