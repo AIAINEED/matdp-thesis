@@ -1,0 +1,161 @@
+{
+  "config": {
+    "methods": [
+      "full",
+      "no_transformer",
+      "no_diffusion"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "episodes": 1000,
+    "max_steps": 50,
+    "max_cycles": 50,
+    "plot_every": 100,
+    "log_dir": "logs",
+    "save_raw_logs": true,
+    "git_commit": "unknown"
+  },
+  "runs": [
+    {
+      "method": "full",
+      "seed": 0,
+      "run_dir": "logs/20260420_161820",
+      "summary": {
+        "final_reward": -326.8168510008676,
+        "avg_reward_last_10": -285.79349438191645,
+        "avg_reward": -259.1082796510186,
+        "avg_actor_loss": -0.18639618098107166,
+        "avg_critic_loss": 194.41560473537444
+      }
+    },
+    {
+      "method": "full",
+      "seed": 1,
+      "run_dir": "logs/20260420_163209",
+      "summary": {
+        "final_reward": -300.79115910152166,
+        "avg_reward_last_10": -282.8447585308466,
+        "avg_reward": -245.33976368682062,
+        "avg_actor_loss": -0.24335341462958604,
+        "avg_critic_loss": 368.88140912246706
+      }
+    },
+    {
+      "method": "full",
+      "seed": 2,
+      "run_dir": "logs/20260420_164539",
+      "summary": {
+        "final_reward": -146.46505332410163,
+        "avg_reward_last_10": -160.63459130674613,
+        "avg_reward": -142.1733265450115,
+        "avg_actor_loss": -0.3052462390726432,
+        "avg_critic_loss": 211.14270715379715
+      }
+    },
+    {
+      "method": "no_transformer",
+      "seed": 0,
+      "run_dir": "logs/20260420_165844",
+      "summary": {
+        "final_reward": -299.95993581096917,
+        "avg_reward_last_10": -318.6941762089126,
+        "avg_reward": -292.07061486257356,
+        "avg_actor_loss": -0.49780985932331534,
+        "avg_critic_loss": 103.65236973285676
+      }
+    },
+    {
+      "method": "no_transformer",
+      "seed": 1,
+      "run_dir": "logs/20260420_170726",
+      "summary": {
+        "final_reward": -204.32069309166454,
+        "avg_reward_last_10": -209.5127241611147,
+        "avg_reward": -204.9203705288537,
+        "avg_actor_loss": -0.5735735341459512,
+        "avg_critic_loss": 95.94910435295105
+      }
+    },
+    {
+      "method": "no_transformer",
+      "seed": 2,
+      "run_dir": "logs/20260420_171638",
+      "summary": {
+        "final_reward": -309.8926554469424,
+        "avg_reward_last_10": -297.9684002739456,
+        "avg_reward": -289.1360046312646,
+        "avg_actor_loss": -0.5429463904108852,
+        "avg_critic_loss": 158.35085597229005
+      }
+    },
+    {
+      "method": "no_diffusion",
+      "seed": 0,
+      "run_dir": "logs/20260420_172410",
+      "summary": {
+        "final_reward": -214.30716161755305,
+        "avg_reward_last_10": -196.62220720163316,
+        "avg_reward": -151.04679632931854,
+        "avg_actor_loss": -0.06443762877979316,
+        "avg_critic_loss": 270.9241291151047
+      }
+    },
+    {
+      "method": "no_diffusion",
+      "seed": 1,
+      "run_dir": "logs/20260420_173450",
+      "summary": {
+        "final_reward": -47.79269242918694,
+        "avg_reward_last_10": -50.58882811175083,
+        "avg_reward": -134.2347936661198,
+        "avg_actor_loss": -0.1104602254400379,
+        "avg_critic_loss": 444.23996858596803
+      }
+    },
+    {
+      "method": "no_diffusion",
+      "seed": 2,
+      "run_dir": "logs/20260420_174524",
+      "summary": {
+        "final_reward": -205.24021023932764,
+        "avg_reward_last_10": -209.4609340025814,
+        "avg_reward": -147.19979147688449,
+        "avg_actor_loss": -0.08452194877248258,
+        "avg_critic_loss": 426.60641957759856
+      }
+    }
+  ],
+  "aggregate": {
+    "num_runs": 9,
+    "mean_final_reward": -228.39849022912605,
+    "mean_avg_reward_last_10": -223.56890157549412,
+    "var_avg_reward_last_10": 6330.57765368076,
+    "std_avg_reward_last_10": 79.56492728382752
+  },
+  "per_method": {
+    "full": {
+      "num_runs": 3,
+      "mean_final_reward": -258.024354475497,
+      "mean_avg_reward_last_10": -243.0909480731697,
+      "var_avg_reward_last_10": 3400.974559449096,
+      "std_avg_reward_last_10": 58.31787512803511
+    },
+    "no_transformer": {
+      "num_runs": 3,
+      "mean_final_reward": -271.39109478319205,
+      "mean_avg_reward_last_10": -275.3917668813243,
+      "var_avg_reward_last_10": 2241.61709955001,
+      "std_avg_reward_last_10": 47.34571891470242
+    },
+    "no_diffusion": {
+      "num_runs": 3,
+      "mean_final_reward": -155.78002142868922,
+      "mean_avg_reward_last_10": -152.22398977198847,
+      "var_avg_reward_last_10": 5192.32519382955,
+      "std_avg_reward_last_10": 72.05779065326351
+    }
+  }
+}

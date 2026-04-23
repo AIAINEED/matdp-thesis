@@ -1,0 +1,51 @@
+{
+  "config": {
+    "methods": [
+      "full"
+    ],
+    "seeds": [
+      1
+    ],
+    "episodes": 5000,
+    "max_steps": 50,
+    "max_cycles": 50,
+    "plot_every": 500,
+    "log_dir": "logs",
+    "save_raw_logs": true,
+    "actor_lr": null,
+    "critic_lr": null,
+    "horizon": null,
+    "diffusion_steps": null,
+    "git_commit": "unknown"
+  },
+  "runs": [
+    {
+      "method": "full",
+      "seed": 1,
+      "run_dir": "logs/20260420_213722",
+      "summary": {
+        "final_reward": -36.4781626199356,
+        "avg_reward_last_10": -42.62459679857869,
+        "avg_reward": -147.8729985816606,
+        "avg_actor_loss": 0.7169906383603811,
+        "avg_critic_loss": 72.06232276024818
+      }
+    }
+  ],
+  "aggregate": {
+    "num_runs": 1,
+    "mean_final_reward": -36.4781626199356,
+    "mean_avg_reward_last_10": -42.62459679857869,
+    "var_avg_reward_last_10": 0.0,
+    "std_avg_reward_last_10": 0.0
+  },
+  "per_method": {
+    "full": {
+      "num_runs": 1,
+      "mean_final_reward": -36.4781626199356,
+      "mean_avg_reward_last_10": -42.62459679857869,
+      "var_avg_reward_last_10": 0.0,
+      "std_avg_reward_last_10": 0.0
+    }
+  }
+}

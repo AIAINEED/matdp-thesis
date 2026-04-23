@@ -1,0 +1,87 @@
+{
+  "config": {
+    "methods": [
+      "full",
+      "no_transformer",
+      "no_diffusion"
+    ],
+    "seeds": [
+      0
+    ],
+    "episodes": 2,
+    "max_steps": 4,
+    "max_cycles": 50,
+    "plot_every": 0,
+    "log_dir": "logs",
+    "save_raw_logs": true,
+    "git_commit": "unknown"
+  },
+  "runs": [
+    {
+      "method": "full",
+      "seed": 0,
+      "run_dir": "logs/20260420_161640",
+      "summary": {
+        "final_reward": -0.9602479859869225,
+        "avg_reward_last_10": -2.676663729150518,
+        "avg_reward": -2.676663729150518,
+        "avg_actor_loss": 0.18630480021238327,
+        "avg_critic_loss": 0.7410673908889294
+      }
+    },
+    {
+      "method": "no_transformer",
+      "seed": 0,
+      "run_dir": "logs/20260420_161645",
+      "summary": {
+        "final_reward": -1.0148556637730972,
+        "avg_reward_last_10": -2.7585192878683564,
+        "avg_reward": -2.7585192878683564,
+        "avg_actor_loss": 0.15367966890335083,
+        "avg_critic_loss": 0.6498798318207264
+      }
+    },
+    {
+      "method": "no_diffusion",
+      "seed": 0,
+      "run_dir": "logs/20260420_161650",
+      "summary": {
+        "final_reward": -0.8631315783658465,
+        "avg_reward_last_10": -2.6973501893418446,
+        "avg_reward": -2.6973501893418446,
+        "avg_actor_loss": -0.6717477142810822,
+        "avg_critic_loss": 0.6690241377800703
+      }
+    }
+  ],
+  "aggregate": {
+    "num_runs": 3,
+    "mean_final_reward": -0.9460784093752888,
+    "mean_avg_reward_last_10": -2.7108444021202396,
+    "var_avg_reward_last_10": 0.0012077689714225454,
+    "std_avg_reward_last_10": 0.03475297068485722
+  },
+  "per_method": {
+    "full": {
+      "num_runs": 1,
+      "mean_final_reward": -0.9602479859869225,
+      "mean_avg_reward_last_10": -2.676663729150518,
+      "var_avg_reward_last_10": 0.0,
+      "std_avg_reward_last_10": 0.0
+    },
+    "no_transformer": {
+      "num_runs": 1,
+      "mean_final_reward": -1.0148556637730972,
+      "mean_avg_reward_last_10": -2.7585192878683564,
+      "var_avg_reward_last_10": 0.0,
+      "std_avg_reward_last_10": 0.0
+    },
+    "no_diffusion": {
+      "num_runs": 1,
+      "mean_final_reward": -0.8631315783658465,
+      "mean_avg_reward_last_10": -2.6973501893418446,
+      "var_avg_reward_last_10": 0.0,
+      "std_avg_reward_last_10": 0.0
+    }
+  }
+}
