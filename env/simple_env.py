@@ -53,9 +53,9 @@ class SimpleMultiAgentEnv:
         obs_dict, reward_dict, term_dict, trunc_dict, info_dict = self.env.step(action_dict)
         next_obs = self._stack_obs(obs_dict)
 
-        team_reward = float(np.mean([reward_dict.get(a, 0.0) for a in self.agent_ids]))
+        team_reward = float(sum(reward_dict.values()))
         done = all(term_dict.get(a, False) or trunc_dict.get(a, False) for a in self.agent_ids)
         return next_obs, team_reward, done, info_dict
 
     def close(self):
-        self.env.close()
+        self.env.close() 

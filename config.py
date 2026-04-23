@@ -2,7 +2,7 @@ class Config:
     device = "cuda"
 
     n_agents = 3
-    obs_dim = 16
+    obs_dim = 18
     action_dim = 5
 
     hidden_dim = 128
@@ -17,13 +17,14 @@ class Config:
 
     actor_lr = 1e-4      
     critic_lr = 1e-3     
+    beta = 1.0
     batch_size = 64
     epochs = 10
 
     # ===== Runtime / Experiment defaults =====
     seed = 42
-    episodes = 200
-    max_steps = 50
+    episodes = 5
+    max_steps = 10000
     max_cycles = 50
     plot_every = 50
     log_dir = "logs"
