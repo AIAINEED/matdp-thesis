@@ -30,6 +30,8 @@ def parse_args(cfg):
     parser.add_argument("--resume", type=str, default=cfg.resume_path)
     parser.add_argument("--actor-lr", type=float, default=None)
     parser.add_argument("--critic-lr", type=float, default=None)
+    parser.add_argument("--beta", type=float, default=None)
+    parser.add_argument("--bc-warmup-episodes", type=int, default=0)
     parser.add_argument("--horizon", type=int, default=None)
     parser.add_argument("--diffusion-steps", type=int, default=None)
     return parser.parse_args()
@@ -83,7 +85,7 @@ def load_checkpoint(ckpt_path, device, actor, critic, opt_actor, opt_critic):
 
 
 # ================== UPDATE ==================
-def update(actor, critic, buffer, cfg, opt_actor, opt_critic):
+def update(actor, critic, buffer, cfg, opt_actor, opt_critic, beta_override=None):
     states, actions, advantages, returns = buffer.get()
 
     assert states.ndim == 4, f"states should be [T,N,H,D], got {states.shape}"
@@ -100,7 +102,7 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic):
     adv_mean = advantages.mean()
     adv_std = advantages.std() + 1e-8
     norm_advantages = (advantages - adv_mean) / adv_std
-    norm_advantages = norm_advantages.detach()  # 必须切断梯度，防止 Actor 更新干扰 Critic
+    norm_advantages = norm_advantages.detach()  # 必须切断梯度，防止 Actor 更新 干扰 Critic
 
     # 【修复 2：替代 PPO Clip 的安全机制】
     # 将异常大的 Advantage 截断，防止单步梯度爆炸，保护脆弱的 Diffusion 模型
@@ -116,13 +118,22 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic):
 
         opt_critic.zero_grad()
         critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_(critic.parameters(), max_norm=0.5) 
+        # compute critic grad norm before clipping
+        critic_grad_norm = 0.0
+        total = 0.0
+        for p in critic.parameters():
+            if p.grad is not None:
+                total += float((p.grad.data ** 2).sum().item())
+        critic_grad_norm = float(total ** 0.5)
+        torch.nn.utils.clip_grad_norm_(critic.parameters(), max_norm=0.5)
         opt_critic.step()
 
         # ===== Actor =====
         h_all = actor.encode(states)
 
         actor_loss = 0.0
+        mse_sum = 0.0
+        mse_count = 0
 
         for i in range(cfg.n_agents):
             h = h_all[:, i]
@@ -130,10 +141,16 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic):
 
             # [B] 获取扩散模型去噪步骤的均方误差
             mse_loss = actor.policy.loss(a, h)  
+            # accumulate mse stats
+            try:
+                mse_sum += float(mse_loss.mean().item())
+                mse_count += 1
+            except Exception:
+                pass
             
             # 【终极修复：使用指数优势加权 (AWAC/DPPO 标配)】
-            # beta 是温度系数，通常设为 1.0 或 2.0。它控制着对“好动作”的偏好程度。
-            beta = 1.0 
+            # beta 是温度系数，通常设为 1.0 或 2.0。它控制着对"好动作"的偏好程度。
+            beta = cfg.beta if beta_override is None else float(beta_override)
             weights = torch.exp(beta * norm_advantages)
             
             # 加上一个 clamp 防止某些极其惊艳的动作导致权重单步过大 (比如超过 10 倍)
@@ -150,10 +167,31 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic):
 
         opt_actor.zero_grad()
         actor_loss.backward()
+        # compute actor grad norm before clipping
+        actor_grad_norm = 0.0
+        total_a = 0.0
+        for p in actor.parameters():
+            if p.grad is not None:
+                total_a += float((p.grad.data ** 2).sum().item())
+        actor_grad_norm = float(total_a ** 0.5)
         torch.nn.utils.clip_grad_norm_(actor.parameters(), max_norm=0.5)
         opt_actor.step()
 
-    return actor_loss.item(), critic_loss.item()
+    # compute mse mean across agents/time
+    try:
+        mse_mean = float(mse_sum / mse_count)
+    except Exception:
+        mse_mean = 0.0
+
+    diag = {
+        'adv_mean': float(adv_mean.item()),
+        'adv_std': float(adv_std),
+        'mse_mean': mse_mean,
+        'actor_grad_norm': float(actor_grad_norm) if 'actor_grad_norm' in locals() else 0.0,
+        'critic_grad_norm': float(critic_grad_norm) if 'critic_grad_norm' in locals() else 0.0,
+    }
+
+    return actor_loss.item(), critic_loss.item(), diag
 
 
 def train(args):
@@ -164,6 +202,8 @@ def train(args):
         cfg.actor_lr = args.actor_lr
     if args.critic_lr is not None:
         cfg.critic_lr = args.critic_lr
+    if args.beta is not None:
+        cfg.beta = args.beta
     if args.horizon is not None:
         cfg.horizon = args.horizon
     if args.diffusion_steps is not None:
@@ -186,13 +226,24 @@ def train(args):
     cfg.obs_dim = env.obs_dim
     cfg.action_dim = env.action_dim
 
-    logger = TrainingLogger(log_dir=args.log_dir)
+    logger = TrainingLogger(
+        log_dir=args.log_dir,
+        plot_meta={
+            "max_steps": args.max_steps,
+            "episodes": args.episodes,
+            "actor_lr": cfg.actor_lr,
+            "critic_lr": cfg.critic_lr,
+            "method": args.method,
+        },
+    )
     actor = Actor(cfg).to(device)
     critic = Critic(cfg).to(device)
     opt_actor = torch.optim.Adam(actor.parameters(), lr=cfg.actor_lr)
     opt_critic = torch.optim.Adam(critic.parameters(), lr=cfg.critic_lr)
     buffer = ReplayBuffer(cfg, device)
     start_episode = 0
+    # Track best episode reward for checkpointing (save only best)
+    best_reward = float("-inf")
 
     if args.resume:
         start_episode = load_checkpoint(
@@ -209,6 +260,7 @@ def train(args):
         f"max_cycles={args.max_cycles} n_agents={cfg.n_agents} obs_dim={cfg.obs_dim} action_dim={cfg.action_dim} "
         f"encoder={cfg.encoder_type} policy={cfg.policy_type} "
         f"actor_lr={cfg.actor_lr} critic_lr={cfg.critic_lr} horizon={cfg.horizon} diffusion_steps={cfg.diffusion_steps} "
+        f"beta={cfg.beta} "
         f"save_checkpoints={bool(args.save_checkpoints)} checkpoint_every={args.checkpoint_every} "
         f"resume={'none' if not args.resume else args.resume} start_episode={start_episode}"
     )
@@ -246,7 +298,9 @@ def train(args):
                 # 再转成 list 传给环境
                 next_obs, reward, done, _ = env.step(actions_env.tolist())
                 
-                scaled_reward = reward / 10.0
+                # scale reward and account for team-sum aggregation
+                # divide also by number of agents to match per-agent magnitude
+                scaled_reward = reward / (10.0 * cfg.n_agents)
 
                 buffer.add(obs_seq.clone(), actions, scaled_reward, done, value)
                 total_reward += reward
@@ -262,14 +316,22 @@ def train(args):
                 last_value = critic(obs_seq).item()
 
             buffer.compute_returns_advantages(last_value)
-            actor_loss, critic_loss = update(actor, critic, buffer, cfg, opt_actor, opt_critic)
+            beta_now = 0.0 if episode < args.bc_warmup_episodes else cfg.beta
+            actor_loss, critic_loss, diag = update(
+                actor,
+                critic,
+                buffer,
+                cfg,
+                opt_actor,
+                opt_critic,
+                beta_override=beta_now,
+            )
             buffer.clear()
 
-            logger.record(episode, total_reward, actor_loss, critic_loss)
+            diag["beta_used"] = float(beta_now)
+            logger.record(episode, total_reward, actor_loss, critic_loss, diag=diag)
 
-            # ==========================================
-            # 【最终护城河】：线性学习率衰减 (Linear LR Decay)
-            # ==========================================
+            # 线性学习率衰减 (Linear LR Decay)
             # 1. 计算剩余比例 (从 1.0 匀速降到 0.0)
             fraction = 1.0 - (episode / args.episodes)
             
@@ -300,19 +362,24 @@ def train(args):
             if args.plot_every > 0 and (episode + 1) % args.plot_every == 0:
                 logger.plot(save=True)
 
-            if bool(args.save_checkpoints) and args.checkpoint_every > 0 and (episode + 1) % args.checkpoint_every == 0:
-                save_checkpoint(
-                    run_dir=logger.run_dir,
-                    tag=f"ep_{episode + 1:04d}",
-                    episode=episode,
-                    actor=actor,
-                    critic=critic,
-                    opt_actor=opt_actor,
-                    opt_critic=opt_critic,
-                )
+            # Save only the best model (by total_reward) if checkpointing enabled
+            if bool(args.save_checkpoints):
+                if total_reward > best_reward:
+                    best_reward = total_reward
+                    save_checkpoint(
+                        run_dir=logger.run_dir,
+                        tag="best",
+                        episode=episode,
+                        actor=actor,
+                        critic=critic,
+                        opt_actor=opt_actor,
+                        opt_critic=opt_critic,
+                    )
+                    print(f"[Checkpoint] New best model saved at episode {episode} (reward={best_reward:.2f})")
 
         logger.plot(save=True)
-        if bool(args.save_checkpoints):
+        # If no best checkpoint was ever saved, still save one final checkpoint.
+        if bool(args.save_checkpoints) and best_reward == float("-inf"):
             save_checkpoint(
                 run_dir=logger.run_dir,
                 tag="final",
@@ -330,6 +397,7 @@ def train(args):
                 "policy_type": cfg.policy_type,
                 "actor_lr": cfg.actor_lr,
                 "critic_lr": cfg.critic_lr,
+                "beta": cfg.beta,
                 "horizon": cfg.horizon,
                 "diffusion_steps": cfg.diffusion_steps,
                 "episodes": args.episodes,
