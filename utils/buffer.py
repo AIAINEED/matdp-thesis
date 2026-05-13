@@ -18,8 +18,11 @@ class ReplayBuffer:
         self.rewards = []
         self.dones = []
         self.values = []
+        self.log_probs = []
+        self.ks = []
+        self.noises = []
 
-    def add(self, obs, action, reward, done, value):
+    def add(self, obs, action, reward, done, value, log_prob=None, k=None, noise=None):
         """
         obs: [1, N, H, obs_dim]
         action: [1, N, action_dim]
@@ -29,6 +32,12 @@ class ReplayBuffer:
         self.rewards.append(float(reward))
         self.dones.append(float(done))
         self.values.append(float(value))
+        if log_prob is not None:
+            self.log_probs.append(log_prob.detach())
+        if k is not None:
+            self.ks.append(k.detach())
+        if noise is not None:
+            self.noises.append(noise.detach())
 
     def compute_returns_advantages(self, last_value):
         rewards = self.rewards
@@ -83,11 +92,11 @@ class ReplayBuffer:
     def get(self):
         obs = torch.cat(self.obs, dim=0).to(self.device)
         actions = torch.cat(self.actions, dim=0).to(self.device)
+        log_probs = torch.cat(self.log_probs, dim=0).to(self.device) if self.log_probs else None
+        ks = torch.cat(self.ks, dim=0).to(self.device) if self.ks else None
+        noises = torch.cat(self.noises, dim=0).to(self.device) if self.noises else None
 
         adv = self.advantages
         ret = self.returns
 
-        # normalize advantage（必须）
-        adv = (adv - adv.mean()) / (adv.std() + 1e-8)
-
-        return obs, actions, adv, ret
+        return obs, actions, adv, ret, log_probs, ks, noises

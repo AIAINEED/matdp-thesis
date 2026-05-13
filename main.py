@@ -19,6 +19,7 @@ from utils.logger import TrainingLogger
 def parse_args(cfg):
     parser = argparse.ArgumentParser(description="Train MA-DPPO-Seq on PettingZoo MPE simple_spread")
     parser.add_argument("--method", type=str, default=cfg.method, choices=["full", "no_transformer", "no_diffusion"])
+    parser.add_argument("--n-agents", type=int, default=cfg.n_agents)
     parser.add_argument("--seed", type=int, default=cfg.seed)
     parser.add_argument("--episodes", type=int, default=cfg.episodes)
     parser.add_argument("--max-steps", type=int, default=cfg.max_steps)
@@ -30,8 +31,8 @@ def parse_args(cfg):
     parser.add_argument("--resume", type=str, default=cfg.resume_path)
     parser.add_argument("--actor-lr", type=float, default=None)
     parser.add_argument("--critic-lr", type=float, default=None)
-    parser.add_argument("--beta", type=float, default=None)
-    parser.add_argument("--bc-warmup-episodes", type=int, default=0)
+    parser.add_argument("--clip-param", type=float, default=cfg.clip_param)
+    parser.add_argument("--ppo-epochs", type=int, default=cfg.ppo_epochs)
     parser.add_argument("--horizon", type=int, default=None)
     parser.add_argument("--diffusion-steps", type=int, default=None)
     return parser.parse_args()
@@ -85,8 +86,8 @@ def load_checkpoint(ckpt_path, device, actor, critic, opt_actor, opt_critic):
 
 
 # ================== UPDATE ==================
-def update(actor, critic, buffer, cfg, opt_actor, opt_critic, beta_override=None):
-    states, actions, advantages, returns = buffer.get()
+def update(actor, critic, buffer, cfg, opt_actor, opt_critic):
+    states, actions, advantages, returns, old_log_probs, ks, noises = buffer.get()
 
     assert states.ndim == 4, f"states should be [T,N,H,D], got {states.shape}"
     assert actions.ndim == 3, f"actions should be [T,N,A], got {actions.shape}"
@@ -97,18 +98,37 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, beta_override=None
         f"adv={advantages.shape[0]}, returns={returns.shape[0]}"
     )
 
-    # 【修复 1：标准化 Advantage】
-    # 将 Advantage 标准化为均值为 0，方差为 1 的分布，这能极大稳定网络更新
     adv_mean = advantages.mean()
     adv_std = advantages.std() + 1e-8
     norm_advantages = (advantages - adv_mean) / adv_std
-    norm_advantages = norm_advantages.detach()  # 必须切断梯度，防止 Actor 更新 干扰 Critic
+    norm_advantages = norm_advantages.detach()
+    
+    # 诊断：验证 norm_advantages 的中心化
+    norm_adv_mean = float(norm_advantages.mean().item())
+    if abs(norm_adv_mean) > 1e-2:
+        print(f"[WARNING] norm_advantages mean is {norm_adv_mean}, should be close to 0!")
 
-    # 【修复 2：替代 PPO Clip 的安全机制】
-    # 将异常大的 Advantage 截断，防止单步梯度爆炸，保护脆弱的 Diffusion 模型
-    norm_advantages = torch.clamp(norm_advantages, min=-2.0, max=2.0)
+    if old_log_probs is None or ks is None or noises is None:
+        raise RuntimeError("buffer must store old_log_probs, k, and noise for PPO updates")
 
-    for _ in range(cfg.epochs):
+    old_log_probs = old_log_probs.squeeze(-1)
+    ks = ks.squeeze(-1)
+
+    if norm_advantages.ndim == 1:
+        norm_advantages = norm_advantages.unsqueeze(-1).expand(-1, cfg.n_agents)
+    if old_log_probs.ndim == 2 and old_log_probs.shape[1] == 1:
+        old_log_probs = old_log_probs.expand(-1, cfg.n_agents)
+
+    total_actor_loss = 0.0
+    total_critic_loss = 0.0
+    total_approx_kl = 0.0
+    total_actor_grad_norm = 0.0
+    total_critic_grad_norm = 0.0
+    epochs_used = 0
+    nan_skips = 0
+
+    for epoch in range(cfg.ppo_epochs):
+        epochs_used += 1
 
         # ===== Critic =====
         values = critic(states)
@@ -132,78 +152,105 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, beta_override=None
         h_all = actor.encode(states)
 
         actor_loss = 0.0
-        mse_sum = 0.0
-        mse_count = 0
+        approx_kl_sum = 0.0
+        approx_kl_count = 0
+
+        norm_advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
         for i in range(cfg.n_agents):
             h = h_all[:, i]
             a = actions[:, i]
 
-            # [B] 获取扩散模型去噪步骤的均方误差
-            mse_loss = actor.policy.loss(a, h)  
-            # accumulate mse stats
-            try:
-                mse_sum += float(mse_loss.mean().item())
-                mse_count += 1
-            except Exception:
-                pass
-            
-            # 【终极修复：使用指数优势加权 (AWAC/DPPO 标配)】
-            # beta 是温度系数，通常设为 1.0 或 2.0。它控制着对"好动作"的偏好程度。
-            beta = cfg.beta if beta_override is None else float(beta_override)
-            weights = torch.exp(beta * norm_advantages)
-            
-            # 加上一个 clamp 防止某些极其惊艳的动作导致权重单步过大 (比如超过 10 倍)
-            weights = torch.clamp(weights, max=10.0)
-            
-            # 现在的 loss 永远在被最小化，坏动作只是 weight 接近 0 而已被忽略
-            loss_i = (mse_loss * weights).mean()
-            
-            actor_loss += loss_i
+            k_i = ks[:, i]
+            noise_i = noises[:, i]
+            old_log_prob_i = old_log_probs[:, i]
+            new_log_prob_i = actor.policy.get_log_prob(a, h, k_i, noise=noise_i).squeeze(-1)
+
+            if not torch.isfinite(new_log_prob_i).all():
+                raise RuntimeError(f"new_log_prob_i became non-finite for agent {i}")
+
+            raw_log_ratio = new_log_prob_i - old_log_prob_i
+            log_ratio = torch.clamp(raw_log_ratio, min=-2.0, max=2.0)
+            ratio = torch.exp(log_ratio)
+            if norm_advantages.dim() == 1:
+                # 针对 CTDE 架构：团队共享一个 Advantage
+                adv_i = norm_advantages
+            elif norm_advantages.size(1) == 1:
+                # 针对某些 Buffer 会多套一层维度变成 [batch, 1] 的情况
+                adv_i = norm_advantages.squeeze(-1)
+            else:
+                # 针对个体独立 Reward 的情况：[batch, n_agents]
+                adv_i = norm_advantages[:, i]
+            surr1 = ratio * adv_i
+            surr2 = torch.clamp(ratio, 1.0 - cfg.clip_param, 1.0 + cfg.clip_param) * adv_i
+            loss_i = -torch.min(surr1, surr2).mean()
+
+            actor_loss = actor_loss + loss_i
+            approx_kl = ((ratio - 1.0) - raw_log_ratio).mean().item()
+            approx_kl_sum += approx_kl
+            approx_kl_count += 1
 
         actor_loss /= cfg.n_agents
-        if torch.isnan(actor_loss):
-            raise RuntimeError("actor_loss is NaN")
+        if not torch.isfinite(actor_loss):
+            raise RuntimeError("actor_loss became non-finite")
 
         opt_actor.zero_grad()
         actor_loss.backward()
-        # compute actor grad norm before clipping
-        actor_grad_norm = 0.0
-        total_a = 0.0
-        for p in actor.parameters():
-            if p.grad is not None:
-                total_a += float((p.grad.data ** 2).sum().item())
-        actor_grad_norm = float(total_a ** 0.5)
-        torch.nn.utils.clip_grad_norm_(actor.parameters(), max_norm=0.5)
-        opt_actor.step()
 
-    # compute mse mean across agents/time
-    try:
-        mse_mean = float(mse_sum / mse_count)
-    except Exception:
-        mse_mean = 0.0
+        # clip gradients and get norm; protect against NaN/Inf norms
+        actor_grad_norm = float(torch.nn.utils.clip_grad_norm_(actor.parameters(), max_norm=0.5))
+        try:
+            if not bool(torch.isfinite(torch.tensor(actor_grad_norm))):
+                raise ValueError('non-finite grad norm')
+        except Exception:
+            # skip this actor update if gradients are NaN/Inf
+            opt_actor.zero_grad()
+            nan_skips += 1
+        else:
+            opt_actor.step()
+
+        approx_kl = float(approx_kl_sum / approx_kl_count) if approx_kl_count else 0.0
+        total_actor_loss += float(actor_loss.item())
+        total_critic_loss += float(critic_loss.item())
+        total_approx_kl += approx_kl
+        total_actor_grad_norm += float(actor_grad_norm)
+        total_critic_grad_norm += float(critic_grad_norm)
+
+        if approx_kl > getattr(cfg, 'target_kl', float('inf')):
+            print(f"[PPO] Early stop at epoch {epoch + 1}/{cfg.ppo_epochs} due to approx_kl={approx_kl:.4f} > target_kl={cfg.target_kl:.4f}")
+            break
 
     diag = {
         'adv_mean': float(adv_mean.item()),
         'adv_std': float(adv_std),
-        'mse_mean': mse_mean,
-        'actor_grad_norm': float(actor_grad_norm) if 'actor_grad_norm' in locals() else 0.0,
-        'critic_grad_norm': float(critic_grad_norm) if 'critic_grad_norm' in locals() else 0.0,
+        'clip_param': float(cfg.clip_param),
+        'ppo_epochs': int(cfg.ppo_epochs),
+        'ppo_epochs_used': int(epochs_used),
+        'approx_kl': float(total_approx_kl / epochs_used) if epochs_used else 0.0,
+        'actor_grad_norm': float(total_actor_grad_norm / epochs_used) if epochs_used else 0.0,
+        'critic_grad_norm': float(total_critic_grad_norm / epochs_used) if epochs_used else 0.0,
+        'nan_skips': int(nan_skips),
     }
 
-    return actor_loss.item(), critic_loss.item(), diag
+    return (total_actor_loss / epochs_used if epochs_used else 0.0), (total_critic_loss / epochs_used if epochs_used else 0.0), diag
 
 
 def train(args):
     cfg = Config()
     set_seed(args.seed)
 
+    if args.n_agents <= 0:
+        raise ValueError(f"n_agents must be positive, got {args.n_agents}")
+    cfg.n_agents = args.n_agents
+
     if args.actor_lr is not None:
         cfg.actor_lr = args.actor_lr
     if args.critic_lr is not None:
         cfg.critic_lr = args.critic_lr
-    if args.beta is not None:
-        cfg.beta = args.beta
+    if args.clip_param is not None:
+        cfg.clip_param = args.clip_param
+    if args.ppo_epochs is not None:
+        cfg.ppo_epochs = args.ppo_epochs
     if args.horizon is not None:
         cfg.horizon = args.horizon
     if args.diffusion_steps is not None:
@@ -238,7 +285,7 @@ def train(args):
     )
     actor = Actor(cfg).to(device)
     critic = Critic(cfg).to(device)
-    opt_actor = torch.optim.Adam(actor.parameters(), lr=cfg.actor_lr)
+    opt_actor = torch.optim.Adam(actor.parameters(), lr=cfg.actor_lr, weight_decay=1e-4)
     opt_critic = torch.optim.Adam(critic.parameters(), lr=cfg.critic_lr)
     buffer = ReplayBuffer(cfg, device)
     start_episode = 0
@@ -260,7 +307,7 @@ def train(args):
         f"max_cycles={args.max_cycles} n_agents={cfg.n_agents} obs_dim={cfg.obs_dim} action_dim={cfg.action_dim} "
         f"encoder={cfg.encoder_type} policy={cfg.policy_type} "
         f"actor_lr={cfg.actor_lr} critic_lr={cfg.critic_lr} horizon={cfg.horizon} diffusion_steps={cfg.diffusion_steps} "
-        f"beta={cfg.beta} "
+        f"clip_param={cfg.clip_param} ppo_epochs={cfg.ppo_epochs} "
         f"save_checkpoints={bool(args.save_checkpoints)} checkpoint_every={args.checkpoint_every} "
         f"resume={'none' if not args.resume else args.resume} start_episode={start_episode}"
     )
@@ -288,12 +335,31 @@ def train(args):
             for _ in range(args.max_steps):
                 with torch.no_grad():
                     actions, _ = actor(obs_seq)
+                    h_all = actor.encode(obs_seq)
                     value = critic(obs_seq).item()
 
+                    old_log_probs = []
+                    ks = []
+                    noises = []
+                    for i in range(cfg.n_agents):
+                        k_i = torch.randint(1, cfg.diffusion_steps, (actions.shape[0],), device=device)
+                        noise_i = torch.randn_like(actions[:, i])
+                        log_prob_i = actor.policy.get_log_prob(actions[:, i], h_all[:, i], k_i, noise=noise_i)
+                        old_log_probs.append(log_prob_i.unsqueeze(1))
+                        ks.append(k_i.view(-1, 1, 1))
+                        noises.append(noise_i.unsqueeze(1))
+
+                    old_log_probs = torch.cat(old_log_probs, dim=1)
+                    ks = torch.cat(ks, dim=1)
+                    noises = torch.cat(noises, dim=1)
+
                 actions_env = actions[0].detach().cpu().numpy()
-                
-                # 这里强制截断，无论网络输出多离谱，传给环境的绝对不会超标
-                actions_env = np.clip(actions_env, 0.0, 1.0)
+                # 使用环境的动作上下界进行截断，保持与 env.step 一致
+                try:
+                    actions_env = np.clip(actions_env, env._act_low, env._act_high)
+                except Exception:
+                    # Fallback: 不作额外裁剪，让 env.step 自行处理
+                    pass
                 
                 # 再转成 list 传给环境
                 next_obs, reward, done, _ = env.step(actions_env.tolist())
@@ -302,7 +368,16 @@ def train(args):
                 # divide also by number of agents to match per-agent magnitude
                 scaled_reward = reward / (10.0 * cfg.n_agents)
 
-                buffer.add(obs_seq.clone(), actions, scaled_reward, done, value)
+                buffer.add(
+                    obs_seq.clone(),
+                    actions,
+                    scaled_reward,
+                    done,
+                    value,
+                    log_prob=old_log_probs,
+                    k=ks,
+                    noise=noises,
+                )
                 total_reward += reward
 
                 next_obs_t = torch.tensor(next_obs.tolist(), dtype=torch.float32, device=device)
@@ -316,19 +391,31 @@ def train(args):
                 last_value = critic(obs_seq).item()
 
             buffer.compute_returns_advantages(last_value)
-            beta_now = 0.0 if episode < args.bc_warmup_episodes else cfg.beta
-            actor_loss, critic_loss, diag = update(
-                actor,
-                critic,
-                buffer,
-                cfg,
-                opt_actor,
-                opt_critic,
-                beta_override=beta_now,
-            )
+            
+            # Skip PPO update on episode 0 to let initial policy stabilize
+            if episode == start_episode:
+                print(f"[Episode {episode}] Skipping PPO update for initial policy stabilization, only training critic...")
+                # Only warmup critic on first episode
+                states, actions, advantages, returns, old_log_probs, ks, noises = buffer.get()
+                values = critic(states)
+                critic_loss = ((values - returns) ** 2).mean()
+                opt_critic.zero_grad()
+                critic_loss.backward()
+                torch.nn.utils.clip_grad_norm_(critic.parameters(), max_norm=0.5)
+                opt_critic.step()
+                actor_loss = 0.0
+                diag = {'adv_mean': 0.0, 'adv_std': 0.0, 'clip_param': float(cfg.clip_param), 'ppo_epochs': 0, 'ppo_epochs_used': 0}
+            else:
+                actor_loss, critic_loss, diag = update(
+                    actor,
+                    critic,
+                    buffer,
+                    cfg,
+                    opt_actor,
+                    opt_critic,
+                )
             buffer.clear()
 
-            diag["beta_used"] = float(beta_now)
             logger.record(episode, total_reward, actor_loss, critic_loss, diag=diag)
 
             # 线性学习率衰减 (Linear LR Decay)
@@ -397,7 +484,8 @@ def train(args):
                 "policy_type": cfg.policy_type,
                 "actor_lr": cfg.actor_lr,
                 "critic_lr": cfg.critic_lr,
-                "beta": cfg.beta,
+                "clip_param": cfg.clip_param,
+                "ppo_epochs": cfg.ppo_epochs,
                 "horizon": cfg.horizon,
                 "diffusion_steps": cfg.diffusion_steps,
                 "episodes": args.episodes,
