@@ -15,18 +15,19 @@ class Config:
     gamma = 0.99
     lam = 0.95
 
-    actor_lr = 1e-4      
+    actor_lr = 1e-6      
     critic_lr = 1e-3     
-    beta = 1.0
-    batch_size = 64
-    epochs = 10
+    clip_param = 0.2
+    ppo_epochs = 2
+    target_kl = 0.25   # 0.05 0.25
+    batch_size = 128   # 128  256
 
     # ===== Runtime / Experiment defaults =====
     seed = 42
-    episodes = 5
-    max_steps = 10000
+    episodes = 5000
+    max_steps = 50
     max_cycles = 50
-    plot_every = 50
+    plot_every = 500
     log_dir = "logs"
     save_checkpoints = True
     checkpoint_every = 100

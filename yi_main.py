@@ -30,8 +30,10 @@ def train(args):
         cfg.actor_lr = args.actor_lr
     if args.critic_lr is not None:
         cfg.critic_lr = args.critic_lr
-    if args.beta is not None:
-        cfg.beta = args.beta
+    if args.clip_param is not None:
+        cfg.clip_param = args.clip_param
+    if args.ppo_epochs is not None:
+        cfg.ppo_epochs = args.ppo_epochs
     if args.horizon is not None:
         cfg.horizon = args.horizon
     if args.diffusion_steps is not None:
@@ -66,7 +68,7 @@ def train(args):
     )
     actor = Actor(cfg).to(device)
     critic = Critic(cfg).to(device)
-    opt_actor = torch.optim.Adam(actor.parameters(), lr=cfg.actor_lr)
+    opt_actor = torch.optim.Adam(actor.parameters(), lr=cfg.actor_lr, weight_decay=1e-4)
     opt_critic = torch.optim.Adam(critic.parameters(), lr=cfg.critic_lr)
     buffer = ReplayBuffer(cfg, device)
     start_episode = 0
@@ -88,7 +90,7 @@ def train(args):
         f"max_cycles={args.max_cycles} n_agents={cfg.n_agents} obs_dim={cfg.obs_dim} action_dim={cfg.action_dim} "
         f"encoder={cfg.encoder_type} policy={cfg.policy_type} "
         f"actor_lr={cfg.actor_lr} critic_lr={cfg.critic_lr} horizon={cfg.horizon} diffusion_steps={cfg.diffusion_steps} "
-        f"beta={cfg.beta} "
+        f"clip_param={cfg.clip_param} ppo_epochs={cfg.ppo_epochs} "
         f"save_checkpoints={bool(args.save_checkpoints)} checkpoint_every={args.checkpoint_every} "
         f"resume={'none' if not args.resume else args.resume} start_episode={start_episode}"
     )
@@ -121,15 +123,39 @@ def train(args):
             for _ in range(args.max_steps):
                 with torch.no_grad():
                     actions_raw, _ = actor(obs_seq)
+                    h_all = actor.encode(obs_seq)
                     value = critic(obs_seq).item()
+
+                    old_log_probs = []
+                    ks = []
+                    noises = []
+                    for i in range(cfg.n_agents):
+                        k_i = torch.randint(1, cfg.diffusion_steps, (actions_raw.shape[0],), device=device)
+                        noise_i = torch.randn_like(actions_raw[:, i])
+                        log_prob_i = actor.policy.get_log_prob(actions_raw[:, i], h_all[:, i], k_i, noise=noise_i)
+                        old_log_probs.append(log_prob_i.unsqueeze(1))
+                        ks.append(k_i.view(-1, 1, 1))
+                        noises.append(noise_i.unsqueeze(1))
+
+                    old_log_probs = torch.cat(old_log_probs, dim=1)
+                    ks = torch.cat(ks, dim=1)
+                    noises = torch.cat(noises, dim=1)
 
                 actions_exec = yi_squash_action_to_env(actions_raw[0]).detach().cpu().numpy()
                 next_obs, reward, done, _ = env.step(actions_exec.tolist())
 
                 scaled_reward = reward / 10.0
 
-                # Buffer stores the raw, unconstrained action output.
-                buffer.add(obs_seq.clone(), actions_raw, scaled_reward, done, value)
+                buffer.add(
+                    obs_seq.clone(),
+                    actions_raw,
+                    scaled_reward,
+                    done,
+                    value,
+                    log_prob=old_log_probs,
+                    k=ks,
+                    noise=noises,
+                )
                 total_reward += reward
 
                 next_obs_t = torch.tensor(next_obs.tolist(), dtype=torch.float32, device=device)
@@ -143,19 +169,31 @@ def train(args):
                 last_value = critic(obs_seq).item()
 
             buffer.compute_returns_advantages(last_value)
-            beta_now = 0.0 if episode < args.bc_warmup_episodes else cfg.beta
-            actor_loss, critic_loss, diag = update(
-                actor,
-                critic,
-                buffer,
-                cfg,
-                opt_actor,
-                opt_critic,
-                beta_override=beta_now,
-            )
+            
+            # Skip PPO update on episode 0 to let initial policy stabilize
+            if episode == start_episode:
+                print(f"[Episode {episode}] Skipping PPO update for initial policy stabilization, only training critic...")
+                # Only warmup critic on first episode
+                states, actions, advantages, returns, old_log_probs, ks, noises = buffer.get()
+                values = critic(states)
+                critic_loss = ((values - returns) ** 2).mean()
+                opt_critic.zero_grad()
+                critic_loss.backward()
+                torch.nn.utils.clip_grad_norm_(critic.parameters(), max_norm=0.5)
+                opt_critic.step()
+                actor_loss = 0.0
+                diag = {'adv_mean': 0.0, 'adv_std': 0.0, 'clip_param': float(cfg.clip_param), 'ppo_epochs': 0, 'ppo_epochs_used': 0}
+            else:
+                actor_loss, critic_loss, diag = update(
+                    actor,
+                    critic,
+                    buffer,
+                    cfg,
+                    opt_actor,
+                    opt_critic,
+                )
             buffer.clear()
 
-            diag["beta_used"] = float(beta_now)
             logger.record(episode, total_reward, actor_loss, critic_loss, diag=diag)
 
             fraction = 1.0 - (episode / args.episodes)
@@ -219,7 +257,8 @@ def train(args):
                 "policy_type": cfg.policy_type,
                 "actor_lr": cfg.actor_lr,
                 "critic_lr": cfg.critic_lr,
-                "beta": cfg.beta,
+                "clip_param": cfg.clip_param,
+                "ppo_epochs": cfg.ppo_epochs,
                 "horizon": cfg.horizon,
                 "diffusion_steps": cfg.diffusion_steps,
                 "episodes": args.episodes,

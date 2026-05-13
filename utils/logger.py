@@ -23,9 +23,11 @@ class TrainingLogger:
         # diagnostics
         self.adv_means = []
         self.adv_stds = []
+        self.approx_kls = []
         self.mse_means = []
         self.actor_grad_norms = []
         self.critic_grad_norms = []
+        self.nan_skips = []
         
         print(f"[Logger] Run ID: {self.run_id}")
         print(f"[Logger] Results will be saved to: {self.run_dir}")
@@ -33,23 +35,27 @@ class TrainingLogger:
     def record(self, episode, reward, actor_loss, critic_loss, diag=None):
         """Record metrics from one episode."""
         self.episodes.append(episode)
-        self.rewards.append(reward)
-        self.actor_losses.append(actor_loss)
-        self.critic_losses.append(critic_loss)
+        self.rewards.append(float(reward) if hasattr(reward, 'item') else float(reward))
+        self.actor_losses.append(float(actor_loss) if hasattr(actor_loss, 'item') else float(actor_loss))
+        self.critic_losses.append(float(critic_loss) if hasattr(critic_loss, 'item') else float(critic_loss))
         if diag is not None:
             self.adv_means.append(float(diag.get('adv_mean', 0.0)))
             self.adv_stds.append(float(diag.get('adv_std', 0.0)))
+            self.approx_kls.append(float(diag.get('approx_kl', 0.0)))
             self.mse_means.append(float(diag.get('mse_mean', 0.0)))
             self.actor_grad_norms.append(float(diag.get('actor_grad_norm', 0.0)))
             self.critic_grad_norms.append(float(diag.get('critic_grad_norm', 0.0)))
+            self.nan_skips.append(int(diag.get('nan_skips', 0)))
         else:
             # keep lengths consistent
             self.adv_means.append(0.0)
             self.adv_stds.append(0.0)
+            self.approx_kls.append(0.0)
             self.mse_means.append(0.0)
             self.actor_grad_norms.append(0.0)
             self.critic_grad_norms.append(0.0)
-    def _moving_average(self, values, window=10):
+            self.nan_skips.append(0)
+    def _moving_average(self, values, window=50):
         """Compute moving average."""
         if len(values) < window:
             return values
@@ -61,11 +67,12 @@ class TrainingLogger:
         if len(self.episodes) == 0:
             return
         
-        fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-        fig.subplots_adjust(bottom=0.22, top=0.88, wspace=0.28)
+        fig, axes = plt.subplots(2, 3, figsize=(18, 8))
+        axes = axes.reshape(-1)
+        fig.subplots_adjust(bottom=0.14, top=0.92, hspace=0.35, wspace=0.28)
 
         footer_items = []
-        for key in ("max_steps", "episodes", "actor_lr", "critic_lr", "method"):
+        for key in ("max_steps", "episodes", "actor_lr", "critic_lr", "method","n_agents"):
             if key in self.plot_meta and self.plot_meta[key] is not None:
                 footer_items.append(f"{key}={self.plot_meta[key]}")
         footer_text = " | ".join(footer_items)
@@ -73,8 +80,8 @@ class TrainingLogger:
         # Reward plot
         ax = axes[0]
         ax.plot(self.episodes, self.rewards, 'b-', alpha=0.3, label='Episode Reward')
-        ma_rewards = self._moving_average(self.rewards, window=10)
-        ax.plot(self.episodes[:len(ma_rewards)], ma_rewards, 'b-', linewidth=2, label='MA-10 Reward')
+        ma_rewards = self._moving_average(self.rewards, window=50)
+        ax.plot(self.episodes[:len(ma_rewards)], ma_rewards, 'b-', linewidth=2, label='MA-50 Reward')
         ax.set_xlabel('Episode')
         ax.set_ylabel('Reward')
         ax.set_title('Episode Reward')
@@ -84,8 +91,8 @@ class TrainingLogger:
         # Actor Loss plot
         ax = axes[1]
         ax.plot(self.episodes, self.actor_losses, 'r-', alpha=0.3, label='Episode ActorLoss')
-        ma_actor = self._moving_average(self.actor_losses, window=10)
-        ax.plot(self.episodes[:len(ma_actor)], ma_actor, 'r-', linewidth=2, label='MA-10 ActorLoss')
+        ma_actor = self._moving_average(self.actor_losses, window=50)
+        ax.plot(self.episodes[:len(ma_actor)], ma_actor, 'r-', linewidth=2, label='MA-50 ActorLoss')
         ax.set_xlabel('Episode')
         ax.set_ylabel('Actor Loss')
         ax.set_title('Actor Loss')
@@ -95,11 +102,52 @@ class TrainingLogger:
         # Critic Loss plot
         ax = axes[2]
         ax.plot(self.episodes, self.critic_losses, 'g-', alpha=0.3, label='Episode CriticLoss')
-        ma_critic = self._moving_average(self.critic_losses, window=10)
-        ax.plot(self.episodes[:len(ma_critic)], ma_critic, 'g-', linewidth=2, label='MA-10 CriticLoss')
+        ma_critic = self._moving_average(self.critic_losses, window=50)
+        ax.plot(self.episodes[:len(ma_critic)], ma_critic, 'g-', linewidth=2, label='MA-50 CriticLoss')
         ax.set_xlabel('Episode')
         ax.set_ylabel('Critic Loss')
         ax.set_title('Critic Loss')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+        # Approx KL plot
+        ax = axes[3]
+        ax.plot(self.episodes, self.approx_kls, 'm-', alpha=0.3, label='Episode Approx KL')
+        ma_kl = self._moving_average(self.approx_kls, window=50)
+        ax.plot(self.episodes[:len(ma_kl)], ma_kl, 'm-', linewidth=2, label='MA-50 Approx KL')
+        ax.axhline(0.01, color='gray', linestyle='--', linewidth=1, alpha=0.6)
+        ax.axhline(0.05, color='gray', linestyle=':', linewidth=1, alpha=0.6)
+        ax.set_xlabel('Episode')
+        ax.set_ylabel('Approx KL')
+        ax.set_title('PPO Approx KL')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+        # Gradient norms plot
+        ax = axes[4]
+        ax.plot(self.episodes, self.actor_grad_norms, color='tab:orange', alpha=0.35, label='Actor Grad Norm')
+        ma_actor_grad = self._moving_average(self.actor_grad_norms, window=50)
+        ax.plot(self.episodes[:len(ma_actor_grad)], ma_actor_grad, color='tab:orange', linewidth=2, label='MA-50 Actor Grad Norm')
+        ax.plot(self.episodes, self.critic_grad_norms, color='tab:green', alpha=0.35, label='Critic Grad Norm')
+        ma_critic_grad = self._moving_average(self.critic_grad_norms, window=50)
+        ax.plot(self.episodes[:len(ma_critic_grad)], ma_critic_grad, color='tab:green', linewidth=2, label='MA-50 Critic Grad Norm')
+        ax.set_xlabel('Episode')
+        ax.set_ylabel('Gradient Norm')
+        ax.set_title('Gradient Norms')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+
+        # Advantage stats plot
+        ax = axes[5]
+        ax.plot(self.episodes, self.adv_means, color='tab:blue', alpha=0.35, label='Adv Mean')
+        ma_adv_mean = self._moving_average(self.adv_means, window=50)
+        ax.plot(self.episodes[:len(ma_adv_mean)], ma_adv_mean, color='tab:blue', linewidth=2, label='MA-50 Adv Mean')
+        ax.plot(self.episodes, self.adv_stds, color='tab:red', alpha=0.35, label='Adv Std')
+        ma_adv_std = self._moving_average(self.adv_stds, window=50)
+        ax.plot(self.episodes[:len(ma_adv_std)], ma_adv_std, color='tab:red', linewidth=2, label='MA-50 Adv Std')
+        ax.set_xlabel('Episode')
+        ax.set_ylabel('Advantage')
+        ax.set_title('Advantage Stats')
         ax.legend()
         ax.grid(True, alpha=0.3)
 
@@ -140,9 +188,11 @@ class TrainingLogger:
             'critic_losses': self.critic_losses,
             'adv_means': self.adv_means,
             'adv_stds': self.adv_stds,
+            'approx_kls': self.approx_kls,
             'mse_means': self.mse_means,
             'actor_grad_norms': self.actor_grad_norms,
             'critic_grad_norms': self.critic_grad_norms,
+            'nan_skips': self.nan_skips,
             'summary': {
                 'final_reward': float(self.rewards[-1]) if self.rewards else 0,
                 'avg_reward_last_10': float(np.mean(self.rewards[-10:])) if len(self.rewards) >= 10 else float(np.mean(self.rewards)),
@@ -150,8 +200,12 @@ class TrainingLogger:
                 'avg_actor_loss': float(np.mean(self.actor_losses)) if self.actor_losses else 0,
                 'avg_critic_loss': float(np.mean(self.critic_losses)) if self.critic_losses else 0,
                 'avg_adv_mean': float(np.mean(self.adv_means)) if self.adv_means else 0,
+                'avg_adv_std': float(np.mean(self.adv_stds)) if self.adv_stds else 0,
+                'avg_approx_kl': float(np.mean(self.approx_kls)) if self.approx_kls else 0,
                 'avg_mse_mean': float(np.mean(self.mse_means)) if self.mse_means else 0,
                 'avg_actor_grad_norm': float(np.mean(self.actor_grad_norms)) if self.actor_grad_norms else 0,
+                'avg_critic_grad_norm': float(np.mean(self.critic_grad_norms)) if self.critic_grad_norms else 0,
+                'avg_nan_skips': float(np.mean(self.nan_skips)) if self.nan_skips else 0,
             }
         }
 
