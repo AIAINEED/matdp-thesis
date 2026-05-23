@@ -15,7 +15,8 @@ class Critic(nn.Module):
         encoder_layer = nn.TransformerEncoderLayer(
             d_model=cfg.hidden_dim,
             nhead=cfg.n_heads,
-            batch_first=True
+            batch_first=True,
+            dropout=0.0,
         )
 
         self.encoder = nn.TransformerEncoder(encoder_layer, cfg.n_layers)

@@ -19,10 +19,24 @@ class ReplayBuffer:
         self.dones = []
         self.values = []
         self.log_probs = []
+        self.step_log_probs = []
+        self.chains = []
         self.ks = []
         self.noises = []
 
-    def add(self, obs, action, reward, done, value, log_prob=None, k=None, noise=None):
+    def add(
+        self,
+        obs,
+        action,
+        reward,
+        done,
+        value,
+        log_prob=None,
+        step_log_prob=None,
+        chain=None,
+        k=None,
+        noise=None,
+    ):
         """
         obs: [1, N, H, obs_dim]
         action: [1, N, action_dim]
@@ -34,6 +48,10 @@ class ReplayBuffer:
         self.values.append(float(value))
         if log_prob is not None:
             self.log_probs.append(log_prob.detach())
+        if step_log_prob is not None:
+            self.step_log_probs.append(step_log_prob.detach())
+        if chain is not None:
+            self.chains.append(chain.detach())
         if k is not None:
             self.ks.append(k.detach())
         if noise is not None:
@@ -83,20 +101,25 @@ class ReplayBuffer:
         # store advantages and normalized returns for stability
         self.advantages = torch.tensor(advantages, dtype=torch.float32, device=self.device)
 
-        # normalize returns using running stats
-        eps = 1e-8
-        denom = math.sqrt(self.ret_var + eps)
-        normalized = [(r - self.ret_mean) / denom for r in returns]
-        self.returns = torch.tensor(normalized, dtype=torch.float32, device=self.device)
+        # DO NOT normalize returns here — store raw returns so critic
+        # predicts values on the same scale as rewards. Advantage
+        # normalization is handled elsewhere before actor update.
+        self.returns = torch.tensor(returns, dtype=torch.float32, device=self.device)
 
     def get(self):
         obs = torch.cat(self.obs, dim=0).to(self.device)
         actions = torch.cat(self.actions, dim=0).to(self.device)
         log_probs = torch.cat(self.log_probs, dim=0).to(self.device) if self.log_probs else None
+        step_log_probs = (
+            torch.cat(self.step_log_probs, dim=0).to(self.device)
+            if self.step_log_probs
+            else None
+        )
+        chains = torch.cat(self.chains, dim=0).to(self.device) if self.chains else None
         ks = torch.cat(self.ks, dim=0).to(self.device) if self.ks else None
         noises = torch.cat(self.noises, dim=0).to(self.device) if self.noises else None
 
         adv = self.advantages
         ret = self.returns
 
-        return obs, actions, adv, ret, log_probs, ks, noises
+        return obs, actions, adv, ret, step_log_probs, chains, ks, noises
