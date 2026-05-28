@@ -41,7 +41,8 @@ class Critic(nn.Module):
 
         x = self.encoder(x)
 
-        z = x[:, -1]  # last time step
+        # Use mean pooling over time for a more stable aggregated representation
+        z = x.mean(dim=1)
 
         value = self.value_head(z)
 

@@ -33,7 +33,15 @@ def parse_args(cfg):
     parser.add_argument("--debug-update", type=int, choices=[0, 1], default=None)
     parser.add_argument("--actor-lr", type=float, default=None)
     parser.add_argument("--critic-lr", type=float, default=None)
+    parser.add_argument("--diffusion-recon-weight", type=float, default=None)
     parser.add_argument("--clip-param", type=float, default=cfg.clip_param)
+    parser.add_argument("--value-clip-param", type=float, default=None)
+    parser.add_argument("--reward-scale", type=float, default=None)
+    parser.add_argument("--actor-lr-decay", type=int, choices=[0, 1], default=None)
+    parser.add_argument("--critic-lr-decay", type=int, choices=[0, 1], default=None)
+    parser.add_argument("--lr-decay-episodes", type=int, default=None)
+    parser.add_argument("--lr-decay-short-frac", type=float, default=None)
+    parser.add_argument("--lr-decay-min", type=float, default=None)
     parser.add_argument("--ppo-epochs", type=int, default=cfg.ppo_epochs)
     parser.add_argument("--history-len", type=int, default=None)
     parser.add_argument("--rollout-horizon", type=int, default=None)
@@ -45,10 +53,12 @@ def parse_args(cfg):
     parser.add_argument("--pbrs-anneal", type=int, choices=[0, 1], default=None)
     parser.add_argument("--pbrs-anneal-start", type=float, default=None)
     parser.add_argument("--pbrs-anneal-end", type=float, default=None)
+    parser.add_argument("--coverage-bonus", type=float, default=None)
     parser.add_argument("--fov-mask", type=int, choices=[0, 1], default=None)
     parser.add_argument("--fov-radius", type=float, default=None)
     parser.add_argument("--fov-visibility", type=int, choices=[0, 1], default=None)
     parser.add_argument("--terminate-on-success", type=int, choices=[0, 1], default=None)
+    parser.add_argument("--enable-joint-policy", type=int, choices=[0, 1], default=1)
     return parser.parse_args()
 
 
@@ -71,34 +81,6 @@ def get_git_commit():
         return "unknown"
 
 
-def save_checkpoint(run_dir, tag, episode, actor, critic, opt_actor, opt_critic):
-    ckpt_dir = Path(run_dir) / "checkpoints"
-    ckpt_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_path = ckpt_dir / f"{tag}.pt"
-    torch.save(
-        {
-            "episode": episode,
-            "actor": actor.state_dict(),
-            "critic": critic.state_dict(),
-            "opt_actor": opt_actor.state_dict(),
-            "opt_critic": opt_critic.state_dict(),
-        },
-        ckpt_path,
-    )
-    print(f"[Checkpoint] Saved to {ckpt_path}")
-
-
-def load_checkpoint(ckpt_path, device, actor, critic, opt_actor, opt_critic):
-    ckpt = torch.load(ckpt_path, map_location=device)
-    actor.load_state_dict(ckpt["actor"])
-    critic.load_state_dict(ckpt["critic"])
-    opt_actor.load_state_dict(ckpt["opt_actor"])
-    opt_critic.load_state_dict(ckpt["opt_critic"])
-    last_episode = int(ckpt.get("episode", -1))
-    print(f"[Checkpoint] Loaded from {ckpt_path} (last_episode={last_episode})")
-    return last_episode
-
-
 # ================== UPDATE ==================
 def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
     states, actions, advantages, returns, step_log_probs, chains, ks, noises = buffer.get()
@@ -114,10 +96,6 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
     assert advantages.ndim == 1, f"advantages should be [T], got {advantages.shape}"
     assert returns.ndim == 1, f"returns should be [T], got {returns.shape}"
     assert old_values.ndim == 1, f"old_values should be [T], got {old_values.shape}"
-    assert states.shape[0] == actions.shape[0] == advantages.shape[0] == returns.shape[0], (
-        f"time dimension mismatch: states={states.shape[0]}, actions={actions.shape[0]}, "
-        f"adv={advantages.shape[0]}, returns={returns.shape[0]}"
-    )
     assert old_values.shape[0] == returns.shape[0], (
         f"value time dimension mismatch: old_values={old_values.shape[0]}, returns={returns.shape[0]}"
     )
@@ -133,8 +111,11 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
         raise RuntimeError("advantages/returns contain non-finite values before PPO update")
 
     def clipped_value_loss(current_values, old_values_batch, returns_batch):
+        value_clip_param = getattr(cfg, "value_clip_param", cfg.clip_param)
+        if value_clip_param is None or value_clip_param <= 0.0:
+            return F.smooth_l1_loss(current_values, returns_batch)
         clipped_values = old_values_batch + torch.clamp(
-            current_values - old_values_batch, -cfg.clip_param, cfg.clip_param
+            current_values - old_values_batch, -value_clip_param, value_clip_param
         )
         loss_unclipped = F.smooth_l1_loss(current_values, returns_batch, reduction="none")
         loss_clipped = F.smooth_l1_loss(clipped_values, returns_batch, reduction="none")
@@ -171,6 +152,13 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
         total_approx_kl = 0.0
         total_actor_grad_norm = 0.0
         total_critic_grad_norm = 0.0
+        total_diffusion_mse = 0.0
+        # ratio diagnostics totals
+        total_clip_frac = 0.0
+        total_ratio_mean = 0.0
+        total_ratio_std = 0.0
+        total_raw_log_ratio_mean = 0.0
+        total_raw_log_ratio_std = 0.0
         epochs_used = 0
         nan_skips = 0
         valid_updates = 0
@@ -199,6 +187,7 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
                 returns_mb = returns[mb_idx]
                 old_values_mb = old_values[mb_idx]
                 chains_mb = chains[mb_idx]
+                actions_mb = actions[mb_idx]
                 step_log_probs_mb = step_log_probs[mb_idx]
 
                 values_mb = critic(states_mb)
@@ -222,7 +211,8 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
                 opt_critic.step()
 
                 h_all_mb = actor.encode(states_mb)
-                norm_adv_mb = norm_advantages[mb_idx].unsqueeze(-1).expand(-1, n_agents)
+                use_joint_policy = getattr(cfg, 'enable_joint_policy', False) and hasattr(actor, 'joint_policy')
+                norm_adv_mb = norm_advantages[mb_idx]
 
                 actor_loss_sum = 0.0
                 approx_kl_sum = 0.0
@@ -234,62 +224,127 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
                         [p.detach().flatten() for p in actor.parameters() if p.requires_grad]
                     )
 
-                for model_t in reversed(range(K)):
-                    # chains are stored as [a_K, a_{K-1}, ..., a_0]
-                    # so step t uses current=a_{t+1} and next=a_t
-                    chain_idx = K - 1 - model_t
-                    a_t = chains_mb[:, :, chain_idx]
-                    a_prev = chains_mb[:, :, chain_idx + 1]
-                    old_lp_t = step_log_probs_mb[:, :, model_t]
-                    t_tensor = torch.full(
-                        (states_mb.shape[0],), model_t, device=states_mb.device, dtype=torch.long
-                    )
+                if use_joint_policy:
+                    joint_flat_mb = actor.team_encode(states_mb)[1]
+                    joint_action_dim = actor.joint_policy.joint_action_dim
+                    chain_flat_mb = chains_mb.permute(0, 2, 1, 3).reshape(states_mb.shape[0], K + 1, joint_action_dim)
+                    joint_adv_mb = norm_adv_mb
 
-                    current_lp_agents = []
-                    for agent_idx in range(n_agents):
-                        current_lp_agents.append(
-                            actor.policy.get_step_log_prob(
-                                states_mb[:, agent_idx],
-                                a_t[:, agent_idx],
-                                a_prev[:, agent_idx],
-                                t_tensor,
-                                h=h_all_mb[:, agent_idx],
+                    for model_t in reversed(range(K)):
+                        chain_idx = K - 1 - model_t
+                        a_t = chain_flat_mb[:, chain_idx]
+                        a_prev = chain_flat_mb[:, chain_idx + 1]
+                        # Keep old/new step log-prob shapes aligned as [B].
+                        # Using unsqueeze(-1) here would broadcast current-old to [B, B]
+                        # and inject cross-sample errors into KL/ratio.
+                        old_lp_t = step_log_probs_mb[:, model_t]
+                        t_tensor = torch.full(
+                            (states_mb.shape[0],), model_t, device=states_mb.device, dtype=torch.long
+                        )
+
+                        current_lp_t = actor.joint_policy.get_step_log_prob(
+                            None,
+                            a_t,
+                            a_prev,
+                            t_tensor,
+                            h=joint_flat_mb,
+                        )
+                        if not torch.isfinite(current_lp_t).all():
+                            actor_non_finite = True
+                            break
+
+                        raw_log_ratio = current_lp_t - old_lp_t
+                        log_ratio = torch.clamp(raw_log_ratio, min=-2.0, max=2.0)
+                        ratio = torch.exp(log_ratio)
+                        # collect for diagnostics
+                        try:
+                            raw_list.append(raw_log_ratio.detach())
+                            ratio_list.append(ratio.detach())
+                        except NameError:
+                            raw_list = [raw_log_ratio.detach()]
+                            ratio_list = [ratio.detach()]
+                        surr1 = ratio * joint_adv_mb
+                        surr2 = torch.clamp(ratio, 1.0 - cfg.clip_param, 1.0 + cfg.clip_param) * joint_adv_mb
+                        step_loss = -torch.min(surr1, surr2).mean()
+
+                        actor_loss_sum = actor_loss_sum + step_loss
+                        approx_kl_t = 0.5 * (raw_log_ratio.detach() ** 2).mean()
+                        approx_kl_sum += float(approx_kl_t.item())
+
+                        if debug_first_batch and model_t == K - 1:
+                            print(
+                                "[DEBUG joint stepwise] "
+                                f"current_lp_requires_grad={bool(current_lp_t.requires_grad)} "
+                                f"step_loss_requires_grad={bool(step_loss.requires_grad)} "
+                                f"old_lp_mean={float(old_lp_t.mean().item()):.6f} "
+                                f"current_lp_mean={float(current_lp_t.mean().item()):.6f} "
+                                f"ratio_mean={float(ratio.mean().item()):.6f} "
+                                f"step_loss={float(step_loss.item()):.6f} "
+                                f"adv_mean={float(joint_adv_mb.mean().item()):.6f}",
+                                flush=True,
                             )
+                else:
+                    norm_adv_mb = norm_adv_mb.unsqueeze(-1).expand(-1, n_agents)
+
+                    for model_t in reversed(range(K)):
+                        # chains are stored as [a_K, a_{K-1}, ..., a_0]
+                        # so step t uses current=a_{t+1} and next=a_t
+                        chain_idx = K - 1 - model_t
+                        a_t = chains_mb[:, :, chain_idx]
+                        a_prev = chains_mb[:, :, chain_idx + 1]
+                        old_lp_t = step_log_probs_mb[:, :, model_t]
+                        t_tensor = torch.full(
+                            (states_mb.shape[0],), model_t, device=states_mb.device, dtype=torch.long
                         )
 
-                    current_lp_t = torch.stack(current_lp_agents, dim=1)
-                    if not torch.isfinite(current_lp_t).all():
-                        actor_non_finite = True
-                        break
+                        current_lp_agents = []
+                        for agent_idx in range(n_agents):
+                            current_lp_agents.append(
+                                actor.policy.get_step_log_prob(
+                                    states_mb[:, agent_idx],
+                                    a_t[:, agent_idx],
+                                    a_prev[:, agent_idx],
+                                    t_tensor,
+                                    h=h_all_mb[:, agent_idx],
+                                )
+                            )
 
-                    raw_log_ratio = current_lp_t - old_lp_t
-                    log_ratio = torch.clamp(raw_log_ratio, min=-2.0, max=2.0)
-                    ratio = torch.exp(log_ratio)
-                    surr1 = ratio * norm_adv_mb
-                    surr2 = torch.clamp(
-                        ratio, 1.0 - cfg.clip_param, 1.0 + cfg.clip_param
-                    ) * norm_adv_mb
-                    step_loss = -torch.min(surr1, surr2).mean()
+                        current_lp_t = torch.stack(current_lp_agents, dim=1)
+                        if not torch.isfinite(current_lp_t).all():
+                            actor_non_finite = True
+                            break
 
-                    actor_loss_sum = actor_loss_sum + step_loss
-                    approx_kl_t = (
-                        (torch.exp(torch.clamp(raw_log_ratio.detach(), -20.0, 20.0)) - 1.0)
-                        - raw_log_ratio.detach()
-                    ).mean()
-                    approx_kl_sum += float(approx_kl_t.item())
+                        raw_log_ratio = current_lp_t - old_lp_t
+                        log_ratio = torch.clamp(raw_log_ratio, min=-2.0, max=2.0)
+                        ratio = torch.exp(log_ratio)
+                        try:
+                            raw_list.append(raw_log_ratio.detach())
+                            ratio_list.append(ratio.detach())
+                        except NameError:
+                            raw_list = [raw_log_ratio.detach()]
+                            ratio_list = [ratio.detach()]
+                        surr1 = ratio * norm_adv_mb
+                        surr2 = torch.clamp(
+                            ratio, 1.0 - cfg.clip_param, 1.0 + cfg.clip_param
+                        ) * norm_adv_mb
+                        step_loss = -torch.min(surr1, surr2).mean()
 
-                    if debug_first_batch and model_t == K - 1:
-                        print(
-                            "[DEBUG stepwise] "
-                            f"current_lp_requires_grad={bool(current_lp_t.requires_grad)} "
-                            f"step_loss_requires_grad={bool(step_loss.requires_grad)} "
-                            f"old_lp_mean={float(old_lp_t.mean().item()):.6f} "
-                            f"current_lp_mean={float(current_lp_t.mean().item()):.6f} "
-                            f"ratio_mean={float(ratio.mean().item()):.6f} "
-                            f"step_loss={float(step_loss.item()):.6f} "
-                            f"adv_mean={float(norm_adv_mb.mean().item()):.6f}",
-                            flush=True,
-                        )
+                        actor_loss_sum = actor_loss_sum + step_loss
+                        approx_kl_t = 0.5 * (raw_log_ratio.detach() ** 2).mean()
+                        approx_kl_sum += float(approx_kl_t.item())
+
+                        if debug_first_batch and model_t == K - 1:
+                            print(
+                                "[DEBUG stepwise] "
+                                f"current_lp_requires_grad={bool(current_lp_t.requires_grad)} "
+                                f"step_loss_requires_grad={bool(step_loss.requires_grad)} "
+                                f"old_lp_mean={float(old_lp_t.mean().item()):.6f} "
+                                f"current_lp_mean={float(current_lp_t.mean().item()):.6f} "
+                                f"ratio_mean={float(ratio.mean().item()):.6f} "
+                                f"step_loss={float(step_loss.item()):.6f} "
+                                f"adv_mean={float(norm_adv_mb.mean().item()):.6f}",
+                                flush=True,
+                            )
 
                 if actor_non_finite:
                     nan_skips += 1
@@ -299,10 +354,53 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
                 actor_loss_mb = actor_loss_sum / K
                 approx_kl_mb = approx_kl_sum / K
 
+                # compute minibatch ratio diagnostics
+                if 'raw_list' in locals() and len(raw_list) > 0:
+                    raw_all = torch.cat([r.view(-1) for r in raw_list])
+                    raw_mean = float(raw_all.mean().cpu().item())
+                    raw_std = float(raw_all.std(unbiased=False).cpu().item())
+                    log_clamped = torch.clamp(raw_all, min=-2.0, max=2.0)
+                    ratio_all = torch.exp(log_clamped)
+                    ratio_mean = float(ratio_all.mean().cpu().item())
+                    ratio_std = float(ratio_all.std(unbiased=False).cpu().item())
+                    clip_frac = float(((ratio_all > 1.0 + cfg.clip_param) | (ratio_all < 1.0 - cfg.clip_param)).float().mean().cpu().item())
+                else:
+                    raw_mean = raw_std = ratio_mean = ratio_std = clip_frac = 0.0
+
+                total_raw_log_ratio_mean += raw_mean
+                total_raw_log_ratio_std += raw_std
+                total_ratio_mean += ratio_mean
+                total_ratio_std += ratio_std
+                total_clip_frac += clip_frac
+                # clear local lists for next minibatch
+                if 'raw_list' in locals():
+                    del raw_list
+                if 'ratio_list' in locals():
+                    del ratio_list
+
                 if not torch.isfinite(actor_loss_mb):
                     nan_skips += 1
                     skip_reasons["actor_loss"] += 1
                     continue
+
+                # diffusion reconstruction regularization
+                diffusion_mse_mb = 0.0
+                if getattr(cfg, 'diffusion_recon_weight', 0.0) > 0.0:
+                    if getattr(cfg, 'enable_joint_policy', False) and hasattr(actor, 'joint_policy'):
+                        # joint reconstruction loss
+                        _, joint_flat_mb = actor.team_encode(states_mb)
+                        a0_flat_mb = actions_mb.reshape(actions_mb.shape[0], -1)
+                        diff_losses = actor.joint_policy.loss(a0_flat_mb, joint_flat_mb)
+                        diffusion_mse_mb = float(diff_losses.mean().item())
+                        actor_loss_mb = actor_loss_mb + cfg.diffusion_recon_weight * diff_losses.mean()
+                    else:
+                        # per-agent reconstruction loss
+                        per_agent_losses = []
+                        for i in range(n_agents):
+                            per_agent_losses.append(actor.policy.loss(actions_mb[:, i], h_all_mb[:, i]))
+                        per_agent_losses = torch.stack(per_agent_losses, dim=1)
+                        diffusion_mse_mb = float(per_agent_losses.mean().item())
+                        actor_loss_mb = actor_loss_mb + cfg.diffusion_recon_weight * per_agent_losses.mean()
 
                 opt_actor.zero_grad()
                 actor_loss_mb.backward()
@@ -333,6 +431,7 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
 
                 total_actor_loss += float(actor_loss_mb.item())
                 total_critic_loss += float(critic_loss_mb.item())
+                total_diffusion_mse += float(diffusion_mse_mb)
                 total_approx_kl += float(approx_kl_mb)
                 total_actor_grad_norm += float(actor_grad_norm)
                 total_critic_grad_norm += float(critic_grad_norm)
@@ -381,6 +480,13 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
             "actor_grad_norm": float(total_actor_grad_norm / total_batches),
             "critic_grad_norm": float(total_critic_grad_norm / total_batches),
             "mse_mean": float(total_critic_loss / total_batches),
+            "diffusion_mse": float(total_diffusion_mse / total_batches),
+            # ratio diagnostics averaged over valid updates
+            "clip_frac": float(total_clip_frac / total_batches) if total_batches else 0.0,
+            "ratio_mean": float(total_ratio_mean / total_batches) if total_batches else 0.0,
+            "ratio_std": float(total_ratio_std / total_batches) if total_batches else 0.0,
+            "raw_log_ratio_mean": float(total_raw_log_ratio_mean / total_batches) if total_batches else 0.0,
+            "raw_log_ratio_std": float(total_raw_log_ratio_std / total_batches) if total_batches else 0.0,
             "clip_param": float(cfg.clip_param),
             "ppo_epochs": int(cfg.ppo_epochs),
             "ppo_epochs_used": int(epochs_used),
@@ -416,6 +522,13 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
     total_approx_kl = 0.0
     total_actor_grad_norm = 0.0
     total_critic_grad_norm = 0.0
+    total_diffusion_mse = 0.0
+    # ratio diagnostics totals
+    total_clip_frac = 0.0
+    total_ratio_mean = 0.0
+    total_ratio_std = 0.0
+    total_raw_log_ratio_mean = 0.0
+    total_raw_log_ratio_std = 0.0
     epochs_used = 0
     nan_skips = 0
     valid_updates = 0
@@ -470,6 +583,7 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
 
             # prepare per-agent data for minibatch
             h_all_mb = actor.encode(states[mb_idx])
+            actions_mb = actions[mb_idx]
             old_log_probs_mb = old_log_probs[mb_idx]
             ks_mb = ks[mb_idx]
             noises_mb = noises[mb_idx]
@@ -496,6 +610,12 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
                 raw_log_ratio = new_log_prob_i - old_log_prob_i
                 log_ratio = torch.clamp(raw_log_ratio, min=-2.0, max=2.0)
                 ratio = torch.exp(log_ratio)
+                try:
+                    raw_list.append(raw_log_ratio.detach())
+                    ratio_list.append(ratio.detach())
+                except NameError:
+                    raw_list = [raw_log_ratio.detach()]
+                    ratio_list = [ratio.detach()]
                 if norm_adv_mb.dim() == 1:
                     adv_i = norm_adv_mb
                 elif norm_adv_mb.size(1) == 1:
@@ -508,10 +628,7 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
                 loss_i = -torch.min(surr1, surr2).mean()
 
                 actor_loss_mb = actor_loss_mb + loss_i
-                approx_kl = (
-                    (torch.exp(torch.clamp(raw_log_ratio.detach(), -20.0, 20.0)) - 1.0)
-                    - raw_log_ratio.detach()
-                ).mean().item()
+                approx_kl = (0.5 * (raw_log_ratio.detach() ** 2).mean()).item()
                 approx_kl_sum_mb += approx_kl
                 approx_kl_count_mb += 1
 
@@ -521,7 +638,48 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
                 continue
 
             actor_loss_mb /= cfg.n_agents
+            # diffusion reconstruction regularization
+            diffusion_mse_mb = 0.0
+            if (
+                getattr(cfg, 'policy_type', '') == 'diffusion'
+                and getattr(cfg, 'diffusion_recon_weight', 0.0) > 0.0
+            ):
+                if getattr(cfg, 'enable_joint_policy', False) and hasattr(actor, 'joint_policy'):
+                    _, joint_flat_mb = actor.team_encode(states[mb_idx])
+                    a0_flat_mb = actions_mb.reshape(actions_mb.shape[0], -1)
+                    diff_losses = actor.joint_policy.loss(a0_flat_mb, joint_flat_mb)
+                    diffusion_mse_mb = float(diff_losses.mean().item())
+                    actor_loss_mb = actor_loss_mb + cfg.diffusion_recon_weight * diff_losses.mean()
+                else:
+                    per_agent_losses = []
+                    for i in range(cfg.n_agents):
+                        per_agent_losses.append(actor.policy.loss(actions_mb[:, i], h_all_mb[:, i]))
+                    per_agent_losses = torch.stack(per_agent_losses, dim=1)
+                    diffusion_mse_mb = float(per_agent_losses.mean().item())
+                    actor_loss_mb = actor_loss_mb + cfg.diffusion_recon_weight * per_agent_losses.mean()
             approx_kl_mb = float(approx_kl_sum_mb / approx_kl_count_mb) if approx_kl_count_mb else 0.0
+            # compute minibatch ratio diagnostics
+            if 'raw_list' in locals() and len(raw_list) > 0:
+                raw_all = torch.cat([r.view(-1) for r in raw_list])
+                raw_mean = float(raw_all.mean().cpu().item())
+                raw_std = float(raw_all.std(unbiased=False).cpu().item())
+                log_clamped = torch.clamp(raw_all, min=-2.0, max=2.0)
+                ratio_all = torch.exp(log_clamped)
+                ratio_mean = float(ratio_all.mean().cpu().item())
+                ratio_std = float(ratio_all.std(unbiased=False).cpu().item())
+                clip_frac = float(((ratio_all > 1.0 + cfg.clip_param) | (ratio_all < 1.0 - cfg.clip_param)).float().mean().cpu().item())
+            else:
+                raw_mean = raw_std = ratio_mean = ratio_std = clip_frac = 0.0
+
+            total_raw_log_ratio_mean += raw_mean
+            total_raw_log_ratio_std += raw_std
+            total_ratio_mean += ratio_mean
+            total_ratio_std += ratio_std
+            total_clip_frac += clip_frac
+            if 'raw_list' in locals():
+                del raw_list
+            if 'ratio_list' in locals():
+                del ratio_list
             if not torch.isfinite(actor_loss_mb):
                 nan_skips += 1
                 skip_reasons["actor_loss"] += 1
@@ -540,6 +698,7 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
 
             total_actor_loss += float(actor_loss_mb.item())
             total_critic_loss += float(critic_loss_mb.item())
+            total_diffusion_mse += float(diffusion_mse_mb)
             total_approx_kl += approx_kl_mb
             total_actor_grad_norm += float(actor_grad_norm)
             total_critic_grad_norm += float(critic_grad_norm)
@@ -598,6 +757,12 @@ def update(actor, critic, buffer, cfg, opt_actor, opt_critic, episode=None):
         'skip_actor_loss': int(skip_reasons["actor_loss"]),
         'skip_actor_grad': int(skip_reasons["actor_grad"]),
         'actor_grad_sanitized': int(skip_reasons["actor_grad_sanitized"]),
+        'diffusion_mse': float(total_diffusion_mse / valid_updates) if valid_updates else 0.0,
+        'clip_frac': float(total_clip_frac / valid_updates) if valid_updates else 0.0,
+        'ratio_mean': float(total_ratio_mean / valid_updates) if valid_updates else 0.0,
+        'ratio_std': float(total_ratio_std / valid_updates) if valid_updates else 0.0,
+        'raw_log_ratio_mean': float(total_raw_log_ratio_mean / valid_updates) if valid_updates else 0.0,
+        'raw_log_ratio_std': float(total_raw_log_ratio_std / valid_updates) if valid_updates else 0.0,
     }
 
     return total_actor_loss / valid_updates, total_critic_loss / valid_updates, diag
@@ -617,8 +782,24 @@ def train(args):
         cfg.actor_lr = args.actor_lr
     if args.critic_lr is not None:
         cfg.critic_lr = args.critic_lr
+    if args.diffusion_recon_weight is not None:
+        cfg.diffusion_recon_weight = args.diffusion_recon_weight
     if args.clip_param is not None:
         cfg.clip_param = args.clip_param
+    if args.value_clip_param is not None:
+        cfg.value_clip_param = args.value_clip_param
+    if args.reward_scale is not None:
+        cfg.reward_scale = args.reward_scale
+    if args.actor_lr_decay is not None:
+        cfg.actor_lr_decay_on = bool(args.actor_lr_decay)
+    if args.critic_lr_decay is not None:
+        cfg.critic_lr_decay_on = bool(args.critic_lr_decay)
+    if args.lr_decay_episodes is not None:
+        cfg.lr_decay_episodes = args.lr_decay_episodes
+    if args.lr_decay_short_frac is not None:
+        cfg.lr_decay_short_frac = args.lr_decay_short_frac
+    if args.lr_decay_min is not None:
+        cfg.lr_decay_min = args.lr_decay_min
     if args.ppo_epochs is not None:
         cfg.ppo_epochs = args.ppo_epochs
     if args.history_len is not None:
@@ -641,6 +822,8 @@ def train(args):
         cfg.pbrs_anneal_start_frac = args.pbrs_anneal_start
     if args.pbrs_anneal_end is not None:
         cfg.pbrs_anneal_end_frac = args.pbrs_anneal_end
+    if args.coverage_bonus is not None:
+        cfg.coverage_bonus = args.coverage_bonus
     if args.fov_mask is not None:
         cfg.fov_mask_on = bool(args.fov_mask)
     if args.fov_radius is not None:
@@ -660,6 +843,14 @@ def train(args):
         )
     if cfg.fov_radius <= 0.0:
         raise ValueError(f"fov_radius must be positive, got {cfg.fov_radius}")
+    if cfg.rollout_horizon <= 0:
+        raise ValueError(f"rollout_horizon must be positive, got {cfg.rollout_horizon}")
+    if cfg.lr_decay_episodes <= 0:
+        raise ValueError(f"lr_decay_episodes must be positive, got {cfg.lr_decay_episodes}")
+    if not (0.0 < cfg.lr_decay_short_frac <= 1.0):
+        raise ValueError(f"lr_decay_short_frac must be in (0, 1], got {cfg.lr_decay_short_frac}")
+    if cfg.lr_decay_min < 0.0:
+        raise ValueError(f"lr_decay_min must be non-negative, got {cfg.lr_decay_min}")
 
     if args.method == "no_transformer":
         cfg.encoder_type = "mlp"
@@ -679,6 +870,7 @@ def train(args):
         gamma=cfg.gamma,
         pbrs_on=cfg.pbrs_on,
         potential_scale=cfg.pbrs_potential_scale,
+        coverage_bonus=cfg.coverage_bonus,
         fov_mask_on=cfg.fov_mask_on,
         fov_radius=cfg.fov_radius,
         fov_visibility_on=cfg.fov_visibility_on,
@@ -690,6 +882,11 @@ def train(args):
     cfg.action_dim = env.action_dim
     cfg.action_low = env._act_low
     cfg.action_high = env._act_high
+    if cfg.reward_scale is None:
+        cfg.reward_scale = 1.0 / max(float(cfg.n_agents), 1.0)
+
+    # enable joint policy if requested
+    cfg.enable_joint_policy = bool(args.enable_joint_policy)
 
     logger = TrainingLogger(
         log_dir=args.log_dir,
@@ -700,8 +897,12 @@ def train(args):
             "actor_lr": cfg.actor_lr,
             "critic_lr": cfg.critic_lr,
             "method": args.method,
+            "reward_scale": cfg.reward_scale,
+            "actor_lr_decay_on": cfg.actor_lr_decay_on,
+            "critic_lr_decay_on": cfg.critic_lr_decay_on,
             "pbrs_on": cfg.pbrs_on,
             "pbrs_scale": cfg.pbrs_potential_scale,
+            "coverage_bonus": cfg.coverage_bonus,
             "fov_mask_on": cfg.fov_mask_on,
             "fov_radius": cfg.fov_radius,
             "fov_visibility_on": cfg.fov_visibility_on,
@@ -731,8 +932,10 @@ def train(args):
         f"max_cycles={args.max_cycles} n_agents={cfg.n_agents} obs_dim={cfg.obs_dim} action_dim={cfg.action_dim} "
         f"encoder={cfg.encoder_type} policy={cfg.policy_type} "
         f"actor_lr={cfg.actor_lr} critic_lr={cfg.critic_lr} history_len={cfg.history_len} rollout_horizon={cfg.rollout_horizon} diffusion_steps={cfg.diffusion_steps} "
-        f"clip_param={cfg.clip_param} ppo_epochs={cfg.ppo_epochs} "
+        f"clip_param={cfg.clip_param} value_clip_param={cfg.value_clip_param} reward_scale={cfg.reward_scale} ppo_epochs={cfg.ppo_epochs} "
+        f"actor_lr_decay_on={cfg.actor_lr_decay_on} critic_lr_decay_on={cfg.critic_lr_decay_on} "
         f"fov_mask_on={cfg.fov_mask_on} fov_radius={cfg.fov_radius} fov_visibility_on={cfg.fov_visibility_on} "
+        f"coverage_bonus={cfg.coverage_bonus} "
         f"save_checkpoints={bool(args.save_checkpoints)} checkpoint_every={args.checkpoint_every} "
         f"resume={'none' if not args.resume else args.resume} start_episode={start_episode}"
     )
@@ -747,6 +950,9 @@ def train(args):
                 desc=f"Train {args.method} seed={args.seed}",
                 dynamic_ncols=True,
             )
+
+        rollout_steps = 0
+        updates_done = 0
 
         for episode in episode_iter:
             obs = env.reset()  # [N, obs_dim]
@@ -764,6 +970,7 @@ def train(args):
             episode_steps = 0
             episode_landmark_coverage = 0.0
             episode_min_landmark_distance = float('inf')
+            done = False
 
             for _ in range(args.max_steps):
                 episode_steps += 1
@@ -771,8 +978,13 @@ def train(args):
                     step_log_probs_batch = None
                     chains_batch = None
                     if hasattr(actor.policy, "sample_with_chain"):
-                        actions, chains_batch, step_log_probs_batch = actor.sample_with_chain(obs_seq)
-                        old_log_probs = step_log_probs_batch.mean(dim=-1, keepdim=True)
+                        actions, chains_batch, step_log_probs_batch = actor.sample_with_chain(obs_seq, joint=cfg.enable_joint_policy)
+                        # Use sum over diffusion steps for the joint chain log-prob
+                        # step_log_probs_batch is [B, K] in joint mode, [B, N, K] in independent mode.
+                        if getattr(cfg, "enable_joint_policy", False):
+                            old_log_probs = step_log_probs_batch.sum(dim=-1, keepdim=True)
+                        else:
+                            old_log_probs = step_log_probs_batch.sum(dim=-1, keepdim=True)
                         ks = None
                         noises = None
                     else:
@@ -806,10 +1018,6 @@ def train(args):
                 
                 # 再转成 list 传给环境
                 next_obs, reward, done, _ = env.step(actions_env.tolist())
-                
-                # scale reward and account for team-sum aggregation
-                # divide also by number of agents to match per-agent magnitude
-                scaled_reward = reward / (10.0 * cfg.n_agents)
 
                 env_team_reward = getattr(env, 'last_env_reward', float(reward))
                 shaping_reward = getattr(env, 'last_shaping_reward', 0.0)
@@ -836,10 +1044,12 @@ def train(args):
 
                 effective_shaping_reward = float(shaping_reward) * shaping_weight
                 team_reward = float(env_team_reward) + effective_shaping_reward
+                scaled_reward = team_reward * float(cfg.reward_scale)
                 episode_env_reward += float(env_team_reward)
                 episode_shaping_reward += float(shaping_reward)
                 episode_effective_shaping_reward += float(effective_shaping_reward)
                 episode_team_reward += float(team_reward)
+                rollout_steps += 1
 
                 buffer.add(
                     obs_seq.clone(),
@@ -853,7 +1063,7 @@ def train(args):
                     k=ks,
                     noise=noises,
                 )
-                total_reward += reward
+                total_reward += team_reward
 
                 next_obs_t = torch.as_tensor(next_obs, dtype=torch.float32, device=device)
                 next_obs_t = next_obs_t.unsqueeze(0).unsqueeze(2)  # [1, N, 1, D]
@@ -862,30 +1072,25 @@ def train(args):
                 if done:
                     break
 
-            with torch.no_grad():
-                last_value = critic(obs_seq).item()
+            if (not done) and episode_steps >= args.max_steps and buffer.dones:
+                # The outer training loop resets the env here, so this is a rollout boundary.
+                buffer.dones[-1] = 1.0
 
-            buffer.compute_returns_advantages(last_value)
-            
-            # Skip PPO update on episode 0 to let initial policy stabilize
-            if episode == start_episode:
-                print(f"[Episode {episode}] Skipping PPO update for initial policy stabilization, only training critic...")
-                # Only warmup critic on first episode
-                states, actions, advantages, returns, step_log_probs, chains, ks, noises = buffer.get()
-                old_values = torch.tensor(buffer.values, dtype=torch.float32, device=returns.device)
-                values = critic(states)
-                clipped_values = old_values + torch.clamp(values - old_values, -cfg.clip_param, cfg.clip_param)
-                critic_loss = torch.max(
-                    F.smooth_l1_loss(values, returns, reduction="none"),
-                    F.smooth_l1_loss(clipped_values, returns, reduction="none"),
-                ).mean()
-                opt_critic.zero_grad()
-                critic_loss.backward()
-                torch.nn.utils.clip_grad_norm_(critic.parameters(), max_norm=0.5)
-                opt_critic.step()
-                actor_loss = 0.0
-                diag = {'adv_mean': 0.0, 'adv_std': 0.0, 'clip_param': float(cfg.clip_param), 'ppo_epochs': 0, 'ppo_epochs_used': 0}
-            else:
+            is_last_episode = episode == args.episodes - 1
+            should_update = rollout_steps >= cfg.rollout_horizon or is_last_episode
+            actor_loss = 0.0
+            critic_loss = 0.0
+            diag = {
+                'did_update': 0,
+                'rollout_steps': int(rollout_steps),
+                'reward_scale': float(cfg.reward_scale),
+            }
+
+            if should_update and rollout_steps > 0:
+                with torch.no_grad():
+                    last_value = 0.0 if (buffer.dones and buffer.dones[-1] >= 1.0) else critic(obs_seq).item()
+
+                buffer.compute_returns_advantages(last_value)
                 actor_loss, critic_loss, diag = update(
                     actor,
                     critic,
@@ -895,6 +1100,15 @@ def train(args):
                     opt_critic,
                     episode=episode,
                 )
+                updates_done += 1
+                if isinstance(diag, dict):
+                    diag['did_update'] = 1
+                    diag['rollout_steps'] = int(rollout_steps)
+                    diag['reward_scale'] = float(cfg.reward_scale)
+                    diag['updates_done'] = int(updates_done)
+                buffer.clear()
+                rollout_steps = 0
+
             if isinstance(diag, dict):
                 diag['env_reward'] = float(episode_env_reward)
                 diag['shaping_reward'] = float(episode_shaping_reward)
@@ -910,43 +1124,34 @@ def train(args):
                 diag['shaping_ratio'] = float(
                     episode_shaping_reward / (abs(episode_env_reward) + 1e-8)
                 )
-            buffer.clear()
 
             logger.record(episode, total_reward, actor_loss, critic_loss, diag=diag)
 
-            # ========== 自适应 Late Decay ==========
-            # 原理：不管总集数多少，固定用最后 N 集来精细收敛
-            # 短跑（500集）：自动退化回 25% 衰减（前 375 无衰减，后 125 衰减）
-            # 长跑（5000集）：前 4500 集全速探索，最后 500 集刹车收敛
-            # 超长（10000集）：前 9500 集全速探索，最后 500 集刹车收敛
-            
-            decay_episodes = 500  # 最后 500 集用来精细衰减
-            
-            # 自适应：如果总集数太短（≤1000），退化回百分比衰减
+            decay_episodes = int(cfg.lr_decay_episodes)
             if args.episodes <= 1000:
-                decay_episodes = int(args.episodes * 0.25)
-                
+                decay_episodes = int(args.episodes * cfg.lr_decay_short_frac)
+            decay_episodes = max(1, min(decay_episodes, args.episodes))
             start_decay_episode = args.episodes - decay_episodes
 
-            # 学习率调度逻辑
             if episode < start_decay_episode:
-                # 前期和中期：保持初始学习率，充分探索
-                fraction = 1.0
+                lr_fraction = 1.0
             else:
-                # 最后 decay_episodes 集：线性衰减，精准收敛
                 steps_into_decay = episode - start_decay_episode
-                fraction = 1.0 - (steps_into_decay / decay_episodes)
+                lr_fraction = max(0.0, 1.0 - (steps_into_decay / decay_episodes))
 
-            # 应用衰减，兜底 1e-6
-            lr_actor_now = max(cfg.actor_lr * fraction, 1e-6)
-            lr_critic_now = max(cfg.critic_lr * fraction, 1e-6)
-            
-            # 注入优化器
+            if cfg.actor_lr_decay_on:
+                lr_actor_now = max(cfg.actor_lr * lr_fraction, cfg.lr_decay_min)
+            else:
+                lr_actor_now = cfg.actor_lr
+            if cfg.critic_lr_decay_on:
+                lr_critic_now = max(cfg.critic_lr * lr_fraction, cfg.lr_decay_min)
+            else:
+                lr_critic_now = cfg.critic_lr
+
             for param_group in opt_actor.param_groups:
                 param_group['lr'] = lr_actor_now
             for param_group in opt_critic.param_groups:
                 param_group['lr'] = lr_critic_now
-            # ========================================================
 
             if use_tqdm:
                 episode_iter.set_postfix(
@@ -1001,6 +1206,13 @@ def train(args):
                 "actor_lr": cfg.actor_lr,
                 "critic_lr": cfg.critic_lr,
                 "clip_param": cfg.clip_param,
+                "value_clip_param": cfg.value_clip_param,
+                "reward_scale": cfg.reward_scale,
+                "actor_lr_decay_on": cfg.actor_lr_decay_on,
+                "critic_lr_decay_on": cfg.critic_lr_decay_on,
+                "lr_decay_episodes": cfg.lr_decay_episodes,
+                "lr_decay_short_frac": cfg.lr_decay_short_frac,
+                "lr_decay_min": cfg.lr_decay_min,
                 "ppo_epochs": cfg.ppo_epochs,
                 "history_len": cfg.history_len,
                 "rollout_horizon": cfg.rollout_horizon,
