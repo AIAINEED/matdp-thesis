@@ -24,6 +24,12 @@ class TrainingLogger:
         self.adv_means = []
         self.adv_stds = []
         self.approx_kls = []
+        # new ratio diagnostics
+        self.clip_fracs = []
+        self.ratio_means = []
+        self.ratio_stds = []
+        self.raw_log_ratio_means = []
+        self.raw_log_ratio_stds = []
         self.mse_means = []
         self.actor_grad_norms = []
         self.critic_grad_norms = []
@@ -36,11 +42,15 @@ class TrainingLogger:
         self.skip_actor_loss = []
         self.skip_actor_grad = []
         self.actor_grad_sanitized = []
+        self.did_updates = []
+        self.rollout_steps = []
+        self.reward_scales = []
         self.env_rewards = []
         self.shaping_rewards = []
         self.effective_shaping_rewards = []
         self.shaping_weights = []
         self.team_rewards = []
+        self.successes = []
         self.success_rates = []
         self.episode_steps = []
         self.landmark_coverages = []
@@ -59,6 +69,11 @@ class TrainingLogger:
             self.adv_means.append(float(diag.get('adv_mean', 0.0)))
             self.adv_stds.append(float(diag.get('adv_std', 0.0)))
             self.approx_kls.append(float(diag.get('approx_kl', 0.0)))
+            self.clip_fracs.append(float(diag.get('clip_frac', 0.0)))
+            self.ratio_means.append(float(diag.get('ratio_mean', 0.0)))
+            self.ratio_stds.append(float(diag.get('ratio_std', 0.0)))
+            self.raw_log_ratio_means.append(float(diag.get('raw_log_ratio_mean', 0.0)))
+            self.raw_log_ratio_stds.append(float(diag.get('raw_log_ratio_std', 0.0)))
             self.mse_means.append(float(diag.get('mse_mean', 0.0)))
             self.actor_grad_norms.append(float(diag.get('actor_grad_norm', 0.0)))
             self.critic_grad_norms.append(float(diag.get('critic_grad_norm', 0.0)))
@@ -71,12 +86,17 @@ class TrainingLogger:
             self.skip_actor_loss.append(int(diag.get('skip_actor_loss', 0)))
             self.skip_actor_grad.append(int(diag.get('skip_actor_grad', 0)))
             self.actor_grad_sanitized.append(int(diag.get('actor_grad_sanitized', 0)))
+            self.did_updates.append(int(diag.get('did_update', 0)))
+            self.rollout_steps.append(int(diag.get('rollout_steps', 0)))
+            self.reward_scales.append(float(diag.get('reward_scale', 1.0)))
             self.env_rewards.append(float(diag.get('env_reward', 0.0)))
             self.shaping_rewards.append(float(diag.get('shaping_reward', 0.0)))
             self.effective_shaping_rewards.append(float(diag.get('effective_shaping_reward', 0.0)))
             self.shaping_weights.append(float(diag.get('shaping_weight', 1.0)))
             self.team_rewards.append(float(diag.get('team_reward', reward if hasattr(reward, 'item') else reward)))
-            self.success_rates.append(float(diag.get('success', 0.0)))
+            success_value = float(diag.get('success', diag.get('success_rate', 0.0)))
+            self.successes.append(success_value)
+            self.success_rates.append(success_value)
             self.episode_steps.append(int(diag.get('episode_steps', 0)))
             self.landmark_coverages.append(float(diag.get('landmark_coverage', 0.0)))
             self.min_landmark_distances.append(float(diag.get('min_landmark_distance', 0.0)))
@@ -85,6 +105,11 @@ class TrainingLogger:
             self.adv_means.append(0.0)
             self.adv_stds.append(0.0)
             self.approx_kls.append(0.0)
+            self.clip_fracs.append(0.0)
+            self.ratio_means.append(0.0)
+            self.ratio_stds.append(0.0)
+            self.raw_log_ratio_means.append(0.0)
+            self.raw_log_ratio_stds.append(0.0)
             self.mse_means.append(0.0)
             self.actor_grad_norms.append(0.0)
             self.critic_grad_norms.append(0.0)
@@ -97,11 +122,15 @@ class TrainingLogger:
             self.skip_actor_loss.append(0)
             self.skip_actor_grad.append(0)
             self.actor_grad_sanitized.append(0)
+            self.did_updates.append(0)
+            self.rollout_steps.append(0)
+            self.reward_scales.append(1.0)
             self.env_rewards.append(0.0)
             self.shaping_rewards.append(0.0)
             self.effective_shaping_rewards.append(0.0)
             self.shaping_weights.append(1.0)
             self.team_rewards.append(float(reward) if hasattr(reward, 'item') else float(reward))
+            self.successes.append(0.0)
             self.success_rates.append(0.0)
             self.episode_steps.append(0)
             self.landmark_coverages.append(0.0)
@@ -123,7 +152,7 @@ class TrainingLogger:
         fig.subplots_adjust(bottom=0.12, top=0.93, hspace=0.42, wspace=0.28)
 
         footer_items = []
-        for key in ("max_steps", "episodes", "actor_lr", "critic_lr", "method","n_agents"):
+        for key in ("max_steps", "episodes", "actor_lr", "critic_lr", "reward_scale", "method","n_agents"):
             if key in self.plot_meta and self.plot_meta[key] is not None:
                 footer_items.append(f"{key}={self.plot_meta[key]}")
         footer_text = " | ".join(footer_items)
@@ -287,6 +316,11 @@ class TrainingLogger:
             'adv_means': self.adv_means,
             'adv_stds': self.adv_stds,
             'approx_kls': self.approx_kls,
+            'clip_fracs': self.clip_fracs,
+            'ratio_means': self.ratio_means,
+            'ratio_stds': self.ratio_stds,
+            'raw_log_ratio_means': self.raw_log_ratio_means,
+            'raw_log_ratio_stds': self.raw_log_ratio_stds,
             'mse_means': self.mse_means,
             'actor_grad_norms': self.actor_grad_norms,
             'critic_grad_norms': self.critic_grad_norms,
@@ -299,11 +333,16 @@ class TrainingLogger:
             'skip_actor_loss': self.skip_actor_loss,
             'skip_actor_grad': self.skip_actor_grad,
             'actor_grad_sanitized': self.actor_grad_sanitized,
+            'did_updates': self.did_updates,
+            'rollout_steps': self.rollout_steps,
+            'reward_scales': self.reward_scales,
             'env_rewards': self.env_rewards,
             'shaping_rewards': self.shaping_rewards,
             'effective_shaping_rewards': self.effective_shaping_rewards,
             'shaping_weights': self.shaping_weights,
             'team_rewards': self.team_rewards,
+            'successes': self.successes,
+            'success_rate': self.success_rates,
             'success_rates': self.success_rates,
             'episode_steps': self.episode_steps,
             'landmark_coverages': self.landmark_coverages,
@@ -318,17 +357,26 @@ class TrainingLogger:
                 'avg_adv_std': float(np.mean(self.adv_stds)) if self.adv_stds else 0,
                 'avg_approx_kl': float(np.mean(self.approx_kls)) if self.approx_kls else 0,
                 'avg_mse_mean': float(np.mean(self.mse_means)) if self.mse_means else 0,
+                'avg_clip_frac': float(np.mean(self.clip_fracs)) if self.clip_fracs else 0,
+                'avg_ratio_mean': float(np.mean(self.ratio_means)) if self.ratio_means else 0,
+                'avg_ratio_std': float(np.mean(self.ratio_stds)) if self.ratio_stds else 0,
+                'avg_raw_log_ratio_mean': float(np.mean(self.raw_log_ratio_means)) if self.raw_log_ratio_means else 0,
+                'avg_raw_log_ratio_std': float(np.mean(self.raw_log_ratio_stds)) if self.raw_log_ratio_stds else 0,
                 'avg_actor_grad_norm': float(np.mean(self.actor_grad_norms)) if self.actor_grad_norms else 0,
                 'avg_critic_grad_norm': float(np.mean(self.critic_grad_norms)) if self.critic_grad_norms else 0,
                 'avg_nan_skips': float(np.mean(self.nan_skips)) if self.nan_skips else 0,
                 'avg_valid_updates': float(np.mean(self.valid_updates)) if self.valid_updates else 0,
                 'total_update_failed': int(np.sum(self.update_failed)) if self.update_failed else 0,
                 'avg_actor_grad_sanitized': float(np.mean(self.actor_grad_sanitized)) if self.actor_grad_sanitized else 0,
+                'total_policy_updates': int(np.sum(self.did_updates)) if self.did_updates else 0,
+                'avg_rollout_steps': float(np.mean(self.rollout_steps)) if self.rollout_steps else 0,
+                'avg_reward_scale': float(np.mean(self.reward_scales)) if self.reward_scales else 0,
                 'avg_env_reward': float(np.mean(self.env_rewards)) if self.env_rewards else 0,
                 'avg_shaping_reward': float(np.mean(self.shaping_rewards)) if self.shaping_rewards else 0,
                 'avg_effective_shaping_reward': float(np.mean(self.effective_shaping_rewards)) if self.effective_shaping_rewards else 0,
                 'avg_shaping_weight': float(np.mean(self.shaping_weights)) if self.shaping_weights else 0,
                 'avg_team_reward': float(np.mean(self.team_rewards)) if self.team_rewards else 0,
+                'avg_success': float(np.mean(self.successes)) if self.successes else 0,
                 'avg_success_rate': float(np.mean(self.success_rates)) if self.success_rates else 0,
                 'avg_episode_steps': float(np.mean(self.episode_steps)) if self.episode_steps else 0,
                 'avg_landmark_coverage': float(np.mean(self.landmark_coverages)) if self.landmark_coverages else 0,
@@ -350,6 +398,7 @@ class TrainingLogger:
             return {}
         
         success_window = self.success_rates[-10:] if self.success_rates else []
+        success_alias_window = self.successes[-10:] if self.successes else []
         step_window = self.episode_steps[-10:] if self.episode_steps else []
         coverage_window = self.landmark_coverages[-10:] if self.landmark_coverages else []
         min_dist_window = self.min_landmark_distances[-10:] if self.min_landmark_distances else []
@@ -358,6 +407,7 @@ class TrainingLogger:
             'avg_reward': np.mean(self.rewards[-10:]),
             'avg_actor_loss': np.mean(self.actor_losses[-10:]),
             'avg_critic_loss': np.mean(self.critic_losses[-10:]),
+            'avg_success': float(np.mean(success_alias_window)) if success_alias_window else 0.0,
             'avg_success_rate': float(np.mean(success_window)) if success_window else 0.0,
             'avg_episode_steps': float(np.mean(step_window)) if step_window else 0.0,
             'avg_landmark_coverage': float(np.mean(coverage_window)) if coverage_window else 0.0,

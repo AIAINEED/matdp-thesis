@@ -14,8 +14,9 @@ class SimpleMultiAgentEnv:
         max_cycles=50,
         seed=None,
         gamma=0.99,
-        pbrs_on=True,
+        pbrs_on=False,
         potential_scale=5.0,
+        coverage_bonus=5.0,
         fov_mask_on=False,
         fov_radius=0.5,
         fov_visibility_on=True,
@@ -25,6 +26,7 @@ class SimpleMultiAgentEnv:
         self.gamma = float(gamma)
         self.pbrs_on = bool(pbrs_on)
         self.potential_scale = float(potential_scale)
+        self.coverage_bonus = float(coverage_bonus)
         self.prev_potential = 0.0
         self.last_env_reward = 0.0
         self.last_shaping_reward = 0.0
@@ -153,7 +155,7 @@ class SimpleMultiAgentEnv:
         min_dists_to_landmarks = self._get_min_dists_to_landmarks(obs_dict)
         if min_dists_to_landmarks is None:
             return False
-        return bool(np.all(min_dists_to_landmarks <= 0.1))
+        return bool(np.all(min_dists_to_landmarks <= 0.2))
 
     def reset(self):
         obs_dict, _ = self.env.reset(seed=self.seed)
@@ -185,9 +187,31 @@ class SimpleMultiAgentEnv:
             shaping_reward = (self.gamma * current_potential - self.prev_potential) * self.potential_scale
             self.prev_potential = current_potential
 
-        team_reward = env_team_reward + shaping_reward
+        # Gravity bonus 已回退：保留为注释，便于后续对照实验恢复
+        # try:
+        #     # 计算每个 agent 到最近地标的距离
+        #     landmark_end = 4 + 2 * self.n_agents
+        #     gravity_bonus_sum = 0.0
+        #     for i, agent in enumerate(self.agent_ids):
+        #         obs = np.asarray(obs_dict[agent], dtype=np.float32).reshape(-1)
+        #         if obs.shape[0] < landmark_end:
+        #             continue
+        #         landmark_rel_pos = obs[4:landmark_end].reshape(self.n_agents, 2)
+        #         dists = np.linalg.norm(landmark_rel_pos, axis=1)
+        #         # agent 最短距离到任一地标
+        #         agent_min = float(np.min(dists))
+        #         gravity_bonus = float(np.exp(-5.0 * agent_min))
+        #         gravity_bonus_sum += gravity_bonus
+        #     # 把 gravity bonus 作为 shaping reward 的一部分
+        #     shaping_reward += float(gravity_bonus_sum)
+        # except Exception:
+        #     # 如果 obs_dict 格式不符合预期，则跳过 gravity bonus
+        #     pass
+
+        coverage_bonus_reward = self.coverage_bonus if self._get_success(obs_dict) else 0.0
+        team_reward = env_team_reward + shaping_reward + coverage_bonus_reward
         self.last_env_reward = env_team_reward
-        self.last_shaping_reward = float(shaping_reward)
+        self.last_shaping_reward = float(shaping_reward + coverage_bonus_reward)
         self.last_team_reward = float(team_reward)
         self.last_success = self._get_success(obs_dict)
         min_dists_to_landmarks = self._get_min_dists_to_landmarks(obs_dict)
