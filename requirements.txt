@@ -1,0 +1,13 @@
+# MATDP — Multi-Agent Transformer-Diffusion-PPO
+# Python 3.10+ (developed on 3.10/3.11), CUDA optional but recommended
+
+torch>=2.1
+numpy>=1.24
+
+# Environment: MPE simple_spread (either distribution works; the wrapper tries both)
+pettingzoo>=1.24
+mpe2>=1.0            # fallback if pettingzoo MPE is unavailable
+
+# Logging / plotting
+matplotlib>=3.7
+tqdm>=4.66

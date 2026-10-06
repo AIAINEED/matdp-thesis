@@ -1,8 +1,23 @@
-logs/
+# Python
 __pycache__/
 **/__pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Training outputs
+logs/
 logneo/
 lognod/
 lognot/
 scripts/
+*.pt
+*.pth
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
