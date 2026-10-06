@@ -1,4 +1,12 @@
 # MATDP: Multi-Agent Transformer–Diffusion–PPO for FOV-Limited Cooperative Control
+> 📄 **Full thesis (PDF): [`DAIFEI_THESIS.pdf`](DAIFEI_THESIS.pdf)** — complete method, all
+> experimental tables, and the failure analysis.
+>
+> **Implementation scope:** the released code is the core framework (FOV masking, dual Transformer,
+> joint diffusion policy, PPO). The thesis' additional training-stabilization components —
+> **Sinkhorn-based PBRS**, **Hungarian assignment auxiliary objective**, and **curriculum training** —
+> were developed and run on a lab server whose access expired after graduation, so they are documented
+> in the thesis but not included in this repository.
 
 Reference implementation for the Master's thesis
 **"A Study on Multi-Agent Reinforcement Learning using Transformer-Diffusion-PPO"**
